@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,6 +9,7 @@ import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { AppResolver } from './app.resolver';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -29,9 +30,10 @@ import { AppResolver } from './app.resolver';
       sortSchema: true,
       playground: true,
     }),
-    UsersModule,
+    AuthModule,
     ProductsModule,
     OrdersModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

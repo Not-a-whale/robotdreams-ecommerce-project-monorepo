@@ -17,10 +17,7 @@ type PgError = {
   constraint?: string;
 };
 
-function isPgUniqueViolation(
-  error: unknown,
-  constraint?: string,
-): error is PgError {
+function isPgUniqueViolation(error: unknown, constraint?: string): error is PgError {
   if (!error || typeof error !== 'object') {
     return false;
   }
@@ -168,8 +165,7 @@ export class OrdersService {
         }
       }
 
-      throw err instanceof ConflictException ||
-        err instanceof BadRequestException
+      throw err instanceof ConflictException || err instanceof BadRequestException
         ? err
         : new InternalServerErrorException('Order creation failed');
     } finally {

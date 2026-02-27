@@ -7,7 +7,7 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { UserEntity } from '../users/user.entity';
+import { UserEntity } from '../user/entities/user.entity';
 import { OrderItemEntity } from './order-item-entity';
 
 export type OrderStatus = 'CREATED' | 'PAID' | 'CANCELLED';

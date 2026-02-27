@@ -1,4 +1,7 @@
 {
+  "dependencies": {
+    "@nestjs/mapped-types": "*"
+  },
   "name": "ecommerce-shop-monorepo",
   "private": true,
   "workspaces": [
