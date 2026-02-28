@@ -20,4 +20,8 @@ export class UserService {
   async findByEmail(email: string) {
     return this.dataSource.getRepository(UserEntity).findOne({ where: { email } });
   }
+
+  async getAll() {
+    return this.dataSource.getRepository(UserEntity).find();
+  }
 }

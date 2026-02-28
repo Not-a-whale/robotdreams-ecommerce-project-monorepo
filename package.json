@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "@nestjs/mapped-types": "*"
+    "@nestjs/mapped-types": "*",
+    "zod": "^4.3.6"
   },
   "name": "ecommerce-shop-monorepo",
   "private": true,
@@ -15,7 +16,10 @@
     "test": "turbo run test"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.6",
     "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.1",
     "turbo": "^1.11.0"
   }
 }
