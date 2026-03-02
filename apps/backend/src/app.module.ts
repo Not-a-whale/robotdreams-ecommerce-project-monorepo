@@ -10,19 +10,13 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { AppResolver } from './app.resolver';
 import { UserModule } from './user/user.module';
+import { dataSourceOptions } from './data-source';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'root',
-      password: 'root',
-      database: 'ecommerce',
+      ...dataSourceOptions,
       autoLoadEntities: true,
-      synchronize: false,
-      logging: true,
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
