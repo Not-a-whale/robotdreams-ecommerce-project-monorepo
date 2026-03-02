@@ -11,6 +11,7 @@ import { join } from 'path';
 import { AppResolver } from './app.resolver';
 import { UserModule } from './user/user.module';
 import { dataSourceOptions } from './data-source';
+import { HealthController } from './health-check.controller';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { dataSourceOptions } from './data-source';
     OrdersModule,
     UserModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService, AppResolver],
 })
 export class AppModule {}
