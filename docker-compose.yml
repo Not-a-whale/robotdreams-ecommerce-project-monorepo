@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -14,7 +12,7 @@ services:
     networks:
       - internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,11 +21,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: prod-distroless
+      target: prod # ← Изменено с prod-distroless на prod
     container_name: ecommerce-api
     restart: unless-stopped
     ports:
-      - "${API_PORT:-8080}:3000"
+      - '${API_PORT:-8080}:3000'
     environment:
       NODE_ENV: production
       DB_HOST: postgres
@@ -44,8 +42,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+      target: prod
+    container_name: ecommerce-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://api:3000
+    networks:
+      - public
+      - internal
+    depends_on:
+      - api
 
   migrate:
     build:
@@ -64,9 +78,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: "no"
-    profiles:
-      - tools
+    restart: 'no'
 
   seed:
     build:
@@ -85,11 +97,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    restart: "no"
-    profiles:
-      - tools
+    restart: 'no'
 
 networks:
   internal:

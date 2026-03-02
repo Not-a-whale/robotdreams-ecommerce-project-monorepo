@@ -13,7 +13,6 @@ async function seed() {
 
   const userRepository = dataSource.getRepository(UserEntity);
 
-  // Check if users already exist
   const existingUsers = await userRepository.count();
   if (existingUsers > 0) {
     console.log('⚠️  Users already exist, skipping seed');
@@ -21,7 +20,6 @@ async function seed() {
     return;
   }
 
-  // Create seed users
   const users = [
     {
       name: 'Admin User',
@@ -31,12 +29,12 @@ async function seed() {
     {
       name: 'Test User',
       email: 'test@example.com',
-      password: await hash('test123'),
+      password: await hash('test1234'),
     },
     {
       name: 'Demo User',
       email: 'demo@example.com',
-      password: await hash('demo123'),
+      password: await hash('demo1234'),
     },
   ];
 

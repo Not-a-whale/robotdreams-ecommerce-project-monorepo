@@ -5,10 +5,10 @@ import SubmitButton from '@/components/ui/submitButton';
 import { signIn } from '@/lib/auth';
 import { Label } from '@radix-ui/react-label';
 import Link from 'next/link';
-import { useFormState } from 'react-dom';
+import * as React from 'react';
 
 const SignInForm = () => {
-  const [state, action] = useFormState(signIn, undefined);
+  const [state, action] = React.useActionState(signIn, undefined);
   return (
     <form action={action}>
       <div className="flex flex-col gap-2 w-64">

@@ -5,6 +5,14 @@ import { FormState, LoginFormSchema, SignupFormSchema } from './type';
 import { createSession } from './session';
 import { cookies } from 'next/headers';
 
+const backendUrl =
+  process.env.BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  'http://api:3000';
+
+console.log('backendUrl', backendUrl);
+
 export async function signUp(
   state: FormState,
   formData: FormData,
@@ -20,16 +28,13 @@ export async function signUp(
       error: validationFields.error.flatten().fieldErrors,
     };
   }
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(validationFields.data),
+  const response = await fetch(`${backendUrl}/auth/signup`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify(validationFields.data),
+  });
   if (response.ok) {
     redirect('/auth/signin');
   } else {
@@ -55,17 +60,14 @@ export async function signIn(
     };
   }
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(validationFields.data),
+  const response = await fetch(`${backendUrl}/auth/signin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
-
+    body: JSON.stringify(validationFields.data),
+  });
+  console.log('Sign-in response:', response);
   if (response.ok) {
     const result = await response.json();
     await createSession({
