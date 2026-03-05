@@ -9,9 +9,7 @@ export class OrderItemResolver {
   constructor(private readonly productLoader: ProductLoader) {}
 
   @ResolveField(() => ProductType)
-  async product(
-    @Parent() orderItem: OrderItemEntity,
-  ): Promise<ProductType | null> {
+  async product(@Parent() orderItem: OrderItemEntity): Promise<ProductType | null> {
     return this.productLoader.batchProducts.load(orderItem.productId);
   }
 }

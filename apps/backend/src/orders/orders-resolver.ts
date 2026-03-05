@@ -2,7 +2,7 @@ import { Resolver, Query, Args, ResolveField, Parent } from '@nestjs/graphql';
 import { OrdersFilterInput } from './graphql/orders-filter.input';
 import { OrdersPaginationInput } from './graphql/orders-pagination.input';
 import { OrdersService } from './orders.service';
-import { OrderEntity } from './order.entity';
+import { OrderEntity } from './entities/order.entity';
 import { OrderType } from './graphql/order.type';
 import { OrderItemType } from './graphql/order-item.type';
 

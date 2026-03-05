@@ -4,9 +4,10 @@ services:
       target: dev
     container_name: ecommerce-api-dev
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NODE_ENV: development
+      WORKER_MODE: 'false'
     volumes:
       - ./apps/backend/src:/app/apps/backend/src:cached
       - ./apps/backend/tsconfig.json:/app/apps/backend/tsconfig.json:cached
@@ -17,6 +18,28 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      target: dev
+    container_name: ecommerce-worker-dev
+    environment:
+      NODE_ENV: development
+      WORKER_MODE: 'true'
+    volumes:
+      - ./apps/backend/src:/app/apps/backend/src:cached
+      - ./apps/backend/tsconfig.json:/app/apps/backend/tsconfig.json:cached
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+    command: npm run start:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -26,23 +49,21 @@ services:
       target: dev
     container_name: ecommerce-frontend-dev
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://api:3000
-      WATCHPACK_POLLING: "true"
-      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: 'true'
+      CHOKIDAR_USEPOLLING: 'true'
     volumes:
-      - ./apps/frontend:/app:ro
+      - ./apps/frontend/src:/app/src:cached
+      - ./apps/frontend/public:/app/public:cached
       - /app/node_modules
       - /app/.next
-    command: npm run dev
-    depends_on:
-      - api
     networks:
       - public
       - internal
 
   postgres:
     ports:
-      - "5432:5432"
+      - '5432:5432'

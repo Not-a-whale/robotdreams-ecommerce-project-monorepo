@@ -12,6 +12,9 @@ import { AppResolver } from './app.resolver';
 import { UserModule } from './user/user.module';
 import { dataSourceOptions } from './data-source';
 import { HealthController } from './health-check.controller';
+import { ConfigModule } from '@nestjs/config';
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { WorkerModule } from './worker/worker.module';
 
 @Module({
   imports: [
@@ -26,9 +29,12 @@ import { HealthController } from './health-check.controller';
       playground: true,
     }),
     AuthModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     ProductsModule,
     OrdersModule,
     UserModule,
+    RabbitMQModule,
+    WorkerModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, AppResolver],

@@ -25,4 +25,11 @@ export class AuthService {
 
     return { id: user.id, email: user.email, name: user.name };
   }
+  async login(userId: number, name?: string) {
+    return { id: userId, name };
+  }
+
+  async generateToken(userId: number, name?: string) {
+    return this.login(userId, name);
+  }
 }

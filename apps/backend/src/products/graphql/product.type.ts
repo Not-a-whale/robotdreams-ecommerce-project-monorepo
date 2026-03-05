@@ -30,7 +30,6 @@ export class ProductType {
   @Field(() => [String], { nullable: true })
   colors?: string[];
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   @Field(() => GraphQLJSONObject, { nullable: true })
   images?: Record<string, any>;
 
