@@ -3,6 +3,12 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "watchAssets": true,
+    "assets": ["**/*.json"],
+    "watchOptions": {
+      "usePolling": true,
+      "interval": 1000
+    }
   }
 }

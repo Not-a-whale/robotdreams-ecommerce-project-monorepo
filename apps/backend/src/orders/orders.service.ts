@@ -169,7 +169,6 @@ export class OrdersService {
   }
 
   async createOrder(dto: CreateOrderDto, idempotencyKey: string) {
-    // ловим 500-ті
     if (!dto?.items || !Array.isArray(dto.items) || dto.items.length === 0) {
       throw new BadRequestException('items[] is required');
     }
@@ -192,7 +191,6 @@ export class OrdersService {
       if (existing) {
         return existing;
       }
-      // тут я лочу
       const productIds = dto.items.map((i) => i.productId);
 
       const products = await queryRunner.manager

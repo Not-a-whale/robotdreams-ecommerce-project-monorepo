@@ -2,7 +2,6 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddRabbitMQFields1709500000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Add fields to orders
     await queryRunner.query(`
       ALTER TABLE "orders" 
       ADD COLUMN "message_id" VARCHAR,
@@ -10,7 +9,6 @@ export class AddRabbitMQFields1709500000000 implements MigrationInterface {
       ADD COLUMN "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     `);
 
-    // Create processed_messages table
     await queryRunner.query(`
       CREATE TABLE "processed_messages" (
         "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

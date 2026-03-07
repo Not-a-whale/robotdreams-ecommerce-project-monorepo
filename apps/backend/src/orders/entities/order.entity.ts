@@ -11,7 +11,6 @@ import {
 import { UserEntity } from '../../user/entities/user.entity';
 import { OrderItemEntity } from '../order-item-entity';
 
-// Додаткові додаю спеціально для RabbitMQ: CANCELED, FAILED
 export type OrderStatus = 'PENDING' | 'CREATED' | 'PAID' | 'CANCELLED' | 'FAILED';
 
 @Entity('orders')

@@ -15,7 +15,6 @@ async function seed() {
   const userRepository = dataSource.getRepository(UserEntity);
   const productRepository = dataSource.getRepository(ProductEntity);
 
-  // === USERS ===
   const existingUsers = await userRepository.count();
   if (existingUsers === 0) {
     const users = [
@@ -37,7 +36,6 @@ async function seed() {
     console.log('⚠️  Users already exist, skipping');
   }
 
-  // === PRODUCTS ===
   const existingProducts = await productRepository.count();
   if (existingProducts === 0) {
     const products = [

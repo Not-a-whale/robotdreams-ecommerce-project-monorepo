@@ -1,17 +1,26 @@
 services:
   api:
     build:
+      context: .
+      dockerfile: Dockerfile
       target: dev
     container_name: ecommerce-api-dev
     ports:
       - '3000:3000'
+    env_file:
+      - ./apps/backend/.env
     environment:
       NODE_ENV: development
       WORKER_MODE: 'false'
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: 1000
+      WATCHPACK_POLLING: 'true'
+      WATCHPACK_POLLING_INTERVAL: 1000
+      TSC_WATCHFILE: DynamicPriorityPolling
+      TSC_WATCHDIRECTORY: DynamicPriorityPolling
+      TSC_NONPOLLING_WATCHER: 'false'
     volumes:
-      - ./apps/backend/src:/app/apps/backend/src:cached
-      - ./apps/backend/tsconfig.json:/app/apps/backend/tsconfig.json:cached
-      - ./apps/backend/nest-cli.json:/app/apps/backend/nest-cli.json:cached
+      - ./apps/backend:/app/apps/backend
       - /app/node_modules
       - /app/apps/backend/node_modules
     command: npm run start:dev
@@ -21,17 +30,30 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - internal
+      - public
 
   worker:
     build:
+      context: .
+      dockerfile: Dockerfile
       target: dev
     container_name: ecommerce-worker-dev
+    env_file:
+      - ./apps/backend/.env
     environment:
       NODE_ENV: development
       WORKER_MODE: 'true'
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: 1000
+      WATCHPACK_POLLING: 'true'
+      WATCHPACK_POLLING_INTERVAL: 1000
+      TSC_WATCHFILE: DynamicPriorityPolling
+      TSC_WATCHDIRECTORY: DynamicPriorityPolling
+      TSC_NONPOLLING_WATCHER: 'false'
     volumes:
-      - ./apps/backend/src:/app/apps/backend/src:cached
-      - ./apps/backend/tsconfig.json:/app/apps/backend/tsconfig.json:cached
+      - ./apps/backend:/app/apps/backend
       - /app/node_modules
       - /app/apps/backend/node_modules
     command: npm run start:dev
@@ -41,6 +63,8 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - internal
 
   frontend:
     build:
@@ -66,4 +90,9 @@ services:
 
   postgres:
     ports:
-      - '5432:5432'
+      - '${POSTGRES_DEV_PORT:-15432}:5432'
+
+  rabbitmq:
+    ports:
+      - '5672:5672'
+      - '15672:15672'

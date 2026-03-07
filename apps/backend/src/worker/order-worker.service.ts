@@ -93,7 +93,6 @@ export class OrdersWorkerService implements OnModuleInit {
     await queryRunner.startTransaction();
 
     try {
-      // 1. Idempotency check
       const existing = await queryRunner.manager.findOne(ProcessedMessageEntity, {
         where: { messageId: orderMessage.messageId },
       });
@@ -104,7 +103,6 @@ export class OrdersWorkerService implements OnModuleInit {
         return;
       }
 
-      // 2. Mark as processing
       const processedMessage = queryRunner.manager.create(ProcessedMessageEntity, {
         messageId: orderMessage.messageId,
         orderId: orderMessage.orderId,
@@ -113,7 +111,6 @@ export class OrdersWorkerService implements OnModuleInit {
 
       await queryRunner.manager.save(processedMessage);
 
-      // 3. Find order
       const order = await queryRunner.manager.findOne(OrderEntity, {
         where: { id: orderMessage.orderId },
         relations: ['items'],
@@ -123,7 +120,6 @@ export class OrdersWorkerService implements OnModuleInit {
         throw new Error(`Order ${orderMessage.orderId} not found`);
       }
 
-      // 4. Lock products and validate stock
       const productIds = orderMessage.items.map((i) => i.productId);
 
       const products = await queryRunner.manager
@@ -136,7 +132,6 @@ export class OrdersWorkerService implements OnModuleInit {
         throw new Error('Some products not found');
       }
 
-      // 5. Check stock
       for (const item of orderMessage.items) {
         const product = products.find((p) => p.id === item.productId);
         if (!product) throw new Error(`Product ${item.productId} not found`);
@@ -145,26 +140,22 @@ export class OrdersWorkerService implements OnModuleInit {
         }
       }
 
-      // 6. Calculate total and update order items
       let total = 0;
 
       for (const item of orderMessage.items) {
         const product = products.find((p) => p.id === item.productId);
         total += product!.price * item.qty;
 
-        // Update order item with price
         const orderItem = order.items.find((oi) => oi.productId === item.productId);
         if (orderItem) {
           orderItem.priceAtPurchase = product!.price;
           await queryRunner.manager.save(orderItem);
         }
 
-        // Decrease stock
         product!.stock -= item.qty;
         await queryRunner.manager.save(product);
       }
 
-      // 7. Update order
       order.status = 'PAID';
       order.totalPrice = total;
       order.processedAt = new Date();
@@ -183,7 +174,6 @@ export class OrdersWorkerService implements OnModuleInit {
         'code' in error &&
         (error as { code?: string }).code === '23505'
       ) {
-        // Unique violation
         this.logger.warn(`⚠️  Duplicate via constraint: ${orderMessage.messageId}`);
         return;
       }

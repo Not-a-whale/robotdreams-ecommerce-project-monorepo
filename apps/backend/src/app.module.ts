@@ -15,6 +15,7 @@ import { HealthController } from './health-check.controller';
 import { ConfigModule } from '@nestjs/config';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { WorkerModule } from './worker/worker.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { WorkerModule } from './worker/worker.module';
     UserModule,
     RabbitMQModule,
     WorkerModule,
+    FilesModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, AppResolver],

@@ -5,6 +5,7 @@ import { OrderEntity } from './orders/entities/order.entity';
 import { OrderItemEntity } from './orders/order-item-entity';
 import { ProductEntity } from './products/product.entity';
 import { ProcessedMessageEntity } from './orders/entities/processed-message.entity';
+import { FileRecordEntity } from './files/entities/file-record.entity';
 
 config();
 
@@ -17,7 +18,14 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'root',
   database: process.env.DB_NAME || 'ecommerce',
-  entities: [UserEntity, OrderEntity, OrderItemEntity, ProductEntity, ProcessedMessageEntity],
+  entities: [
+    UserEntity,
+    OrderEntity,
+    OrderItemEntity,
+    FileRecordEntity,
+    ProductEntity,
+    ProcessedMessageEntity,
+  ],
   migrations: isTsRuntime ? ['src/migrations/*.ts'] : ['dist/migrations/*.js'],
   migrationsRun: false,
   synchronize: true,

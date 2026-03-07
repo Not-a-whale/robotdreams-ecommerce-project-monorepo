@@ -46,10 +46,12 @@ services:
     restart: unless-stopped
     ports:
       - '${API_PORT:-8080}:3000'
+    env_file:
+      - ./apps/backend/.env
     environment:
       NODE_ENV: production
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: ${DB_PORT:-5432}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ${DB_NAME:-ecommerce}
@@ -74,10 +76,12 @@ services:
       target: worker
     container_name: ecommerce-worker
     restart: unless-stopped
+    env_file:
+      - ./apps/backend/.env
     environment:
       NODE_ENV: production
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: ${DB_PORT:-5432}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ${DB_NAME:-ecommerce}
@@ -116,7 +120,7 @@ services:
     container_name: ecommerce-migrate
     environment:
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: ${DB_PORT:-5432}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ${DB_NAME:-ecommerce}
@@ -135,7 +139,7 @@ services:
     container_name: ecommerce-seed
     environment:
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: ${DB_PORT:-5432}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ${DB_NAME:-ecommerce}
