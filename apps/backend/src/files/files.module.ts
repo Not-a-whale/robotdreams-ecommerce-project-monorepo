@@ -10,6 +10,6 @@ import { UserEntity } from '../user/entities/user.entity';
   imports: [TypeOrmModule.forFeature([FileRecordEntity, UserEntity])],
   controllers: [FilesController],
   providers: [FilesService, S3Service],
-  exports: [FilesService, S3Service], // Экспортируем для использования в других модулях
+  exports: [FilesService, S3Service],
 })
 export class FilesModule {}

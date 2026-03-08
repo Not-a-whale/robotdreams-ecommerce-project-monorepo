@@ -106,6 +106,7 @@ services:
       - '3001:3001'
     environment:
       NODE_ENV: production
+      BACKEND_URL: http://api:3000
       NEXT_PUBLIC_API_URL: http://localhost:8080
     networks:
       - public

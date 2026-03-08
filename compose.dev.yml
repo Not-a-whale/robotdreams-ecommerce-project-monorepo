@@ -76,6 +76,7 @@ services:
       - '3001:3001'
     environment:
       NODE_ENV: development
+      BACKEND_URL: http://api:3000
       NEXT_PUBLIC_API_URL: http://api:3000
       WATCHPACK_POLLING: 'true'
       CHOKIDAR_USEPOLLING: 'true'

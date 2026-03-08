@@ -28,13 +28,24 @@ export async function signUp(
       error: validationFields.error.flatten().fieldErrors,
     };
   }
-  const response = await fetch(`${backendUrl}/auth/signup`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(validationFields.data),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${backendUrl}/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(validationFields.data),
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Sign-up request failed:', errorMessage);
+    return {
+      message: 'Unable to reach the backend service. Please try again.',
+    };
+  }
+
   if (response.ok) {
     redirect('/auth/signin');
   } else {
@@ -60,13 +71,24 @@ export async function signIn(
     };
   }
 
-  const response = await fetch(`${backendUrl}/auth/signin`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(validationFields.data),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${backendUrl}/auth/signin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(validationFields.data),
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Sign-in request failed:', errorMessage);
+    return {
+      message: 'Unable to reach the backend service. Please try again.',
+    };
+  }
+
   console.log('Sign-in response:', response);
   if (response.ok) {
     const result = await response.json();
