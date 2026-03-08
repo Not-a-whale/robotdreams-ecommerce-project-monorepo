@@ -2,12 +2,12 @@
 
 import { jwtVerify, SignJWT } from 'jose';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 export type Session = {
   user: {
-    id: number;
+    id: string;
     name: string;
+    avatarUrl?: string | null;
   };
   accessToken: string;
   refreshToken: string;

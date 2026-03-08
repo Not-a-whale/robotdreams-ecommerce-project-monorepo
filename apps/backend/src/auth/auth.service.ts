@@ -23,7 +23,12 @@ export class AuthService {
 
     if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
 
-    return { id: user.id, email: user.email, name: user.name };
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl ?? null,
+    };
   }
   async login(userId: number, name?: string) {
     return { id: userId, name };

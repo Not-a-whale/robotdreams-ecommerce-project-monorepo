@@ -35,3 +35,28 @@ export const LoginFormSchema = z.object({
     .min(8, 'Password is required and should be at least 8 characters long')
     .trim(),
 });
+
+export interface PresignedUploadResponse {
+  fileId: string;
+  key: string;
+  uploadUrl: string;
+  contentType: string;
+  expiresIn: number;
+}
+
+export interface CompleteUploadResponse {
+  fileId: string;
+  url: string;
+  key: string;
+}
+
+export interface UploadAvatarParams {
+  file: File;
+  userId: string;
+}
+
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
+}

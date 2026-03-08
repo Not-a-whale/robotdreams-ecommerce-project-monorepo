@@ -7,6 +7,7 @@ type AuthUserResponse = {
   id: string;
   email: string;
   name: string;
+  avatarUrl?: string | null;
 };
 
 type AuthRequest = {
@@ -29,6 +30,7 @@ export class AuthController {
       id: req.user.id,
       email: req.user.email,
       name: req.user.name,
+      avatarUrl: req.user.avatarUrl ?? null,
     };
   }
 }
