@@ -7,6 +7,7 @@ export type Session = {
   user: {
     id: string;
     name: string;
+    email?: string;
     avatarUrl?: string | null;
   };
   accessToken: string;
@@ -37,9 +38,7 @@ export async function createSession(payload: Session) {
 
 export async function getSession() {
   const cookieStore = await cookies();
-  console.log('cookieStore', cookieStore);
   const cookie = cookieStore.get('session')?.value;
-  console.log('sessionCookie', cookie);
   if (!cookie) {
     return null;
   }
@@ -56,7 +55,5 @@ export async function getSession() {
 
 export async function deleteSession() {
   const cookieStore = await cookies();
-  console.log('cookieStore before delete', cookieStore);
   await cookieStore.delete('session');
-  console.log('cookieStore after delete', cookieStore);
 }

@@ -1,39 +1,87 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { DataSource } from 'typeorm';
-import { UserEntity } from './entities/user.entity';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { hash } from 'argon2';
+import { UserEntity } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+  ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserEntity> {
-    const { password, ...user } = createUserDto;
-    const hashedPassword = await hash(password);
-    return await this.dataSource.getRepository(UserEntity).save({
-      ...user,
-      password: hashedPassword,
+  async findById(id: string): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'name', 'email', 'avatarUrl', 'avatarFileId', 'createdAt'],
     });
-  }
 
-  async findByEmail(email: string): Promise<UserEntity | null> {
-    const user = await this.dataSource.getRepository(UserEntity).findOne({ where: { email } });
-    console.log('User found by email:', user);
-    return user;
-  }
-
-  async getAll(): Promise<UserEntity[]> {
-    return this.dataSource.getRepository(UserEntity).find();
-  }
-
-  async deleteById(id: string): Promise<{ message: string }> {
-    const result = await this.dataSource.getRepository(UserEntity).delete({ id });
-
-    if (!result.affected) {
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
+    return user;
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<UserEntity> {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    const user = this.userRepository.create({
+      ...createUserDto,
+      password: await hash(createUserDto.password),
+    });
+
+    const saved = await this.userRepository.save(user);
+    return this.findById(saved.id);
+  }
+
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
+  async getAll(): Promise<UserEntity[]> {
+    return this.userRepository.find();
+  }
+
+  async deleteById(id: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.userRepository.delete(id);
     return { message: 'User deleted successfully' };
+  }
+
+  async updateAvatar(
+    userId: string,
+    data: { avatarUrl: string; avatarFileId: string },
+  ): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.avatarUrl = data.avatarUrl;
+    user.avatarFileId = data.avatarFileId;
+
+    await this.userRepository.save(user);
+
+    console.log(`✅ User ${userId} avatar updated:`, {
+      avatarUrl: user.avatarUrl,
+      avatarFileId: user.avatarFileId,
+    });
   }
 }

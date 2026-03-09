@@ -10,6 +10,14 @@ interface AvatarUploaderProps {
   onUploadComplete?: (avatarUrl: string) => void;
 }
 
+const ALLOWED_AVATAR_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/jpg',
+  'image/webp',
+  'image/gif',
+];
+
 export function AvatarUploader({
   userId,
   currentAvatarUrl,
@@ -30,9 +38,15 @@ export function AvatarUploader({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Валидация
+    console.log(`🖼️ Avatar selected: ${file.name} (${file.type}, ${file.size} bytes)`);
+
     if (!file.type.startsWith('image/')) {
       setError('Please select an image file');
+      return;
+    }
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      setError('Supported formats: JPG, JPEG, PNG, WEBP, GIF');
       return;
     }
 
@@ -45,7 +59,6 @@ export function AvatarUploader({
     setUploading(true);
     setProgress(0);
 
-    // Показать превью сразу
     const reader = new FileReader();
     reader.onload = (e) => {
       setPreviewUrl(e.target?.result as string);
@@ -53,7 +66,8 @@ export function AvatarUploader({
     reader.readAsDataURL(file);
 
     try {
-      // Загрузить с прогрессом
+      console.log(`🚀 Starting avatar upload for user: ${userId}`);
+
       const avatarUrl = await uploadAvatarWithProgress({
         file,
         userId,
@@ -75,7 +89,6 @@ export function AvatarUploader({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Preview */}
       <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-200">
         {previewUrl ? (
           <Image
@@ -83,6 +96,7 @@ export function AvatarUploader({
             alt="Avatar"
             className="w-full h-full object-cover"
             fill
+            unoptimized
             sizes="128px"
           />
         ) : (
@@ -91,7 +105,6 @@ export function AvatarUploader({
           </div>
         )}
 
-        {/* Progress overlay */}
         {uploading && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="text-white text-sm">{Math.round(progress)}%</div>
@@ -99,7 +112,6 @@ export function AvatarUploader({
         )}
       </div>
 
-      {/* Upload button */}
       <label className="cursor-pointer">
         <input
           type="file"
@@ -113,7 +125,6 @@ export function AvatarUploader({
         </div>
       </label>
 
-      {/* Error */}
       {error && <div className="text-red-500 text-sm">{error}</div>}
     </div>
   );

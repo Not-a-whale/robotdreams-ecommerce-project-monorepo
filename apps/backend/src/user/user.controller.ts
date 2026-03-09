@@ -8,22 +8,27 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
-    return this.userService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
+    return await this.userService.create(createUserDto);
+  }
+
+  @Get('id/:id')
+  async findById(@Param('id') id: string): Promise<UserEntity> {
+    return await this.userService.findById(id);
   }
 
   @Get(':email')
-  findByEmail(@Param('email') email: string): Promise<UserEntity | null> {
-    return this.userService.findByEmail(email);
+  async findByEmail(@Param('email') email: string): Promise<UserEntity | null> {
+    return await this.userService.findByEmail(email);
   }
 
   @Get()
-  getAll(): Promise<UserEntity[]> {
-    return this.userService.getAll();
+  async getAll(): Promise<UserEntity[]> {
+    return await this.userService.getAll();
   }
 
   @Delete(':id')
-  deleteById(@Param('id') id: string): Promise<{ message: string }> {
-    return this.userService.deleteById(id);
+  async deleteById(@Param('id') id: string): Promise<{ message: string }> {
+    return await this.userService.deleteById(id);
   }
 }

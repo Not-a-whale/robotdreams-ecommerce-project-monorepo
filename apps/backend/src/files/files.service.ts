@@ -1,7 +1,7 @@
 import {
   Injectable,
-  ForbiddenException,
   NotFoundException,
+  ForbiddenException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
@@ -15,7 +15,7 @@ import {
   FileVisibility,
 } from './entities/file-record.entity';
 import { S3Service } from './s3.service';
-import { UserEntity } from '../user/entities/user.entity';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class FilesService {
@@ -24,12 +24,13 @@ export class FilesService {
   constructor(
     @InjectRepository(FileRecordEntity)
     private readonly fileRepository: Repository<FileRecordEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
+    private readonly userService: UserService,
     private readonly s3Service: S3Service,
   ) {}
 
   async createAvatarUpload(userId: string, contentType: string) {
+    await this.userService.findById(userId);
+
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(contentType)) {
       throw new BadRequestException(`Content type ${contentType} not allowed`);
@@ -48,16 +49,12 @@ export class FilesService {
       key,
       contentType,
       status: FileStatus.PENDING,
-      visibility: FileVisibility.PUBLIC,
+      visibility: FileVisibility.PRIVATE,
     });
 
     await this.fileRepository.save(fileRecord);
 
-    const uploadUrl = await this.s3Service.generatePresignedUploadUrl(
-      key,
-      contentType,
-      3600, // 1 час на загрузку
-    );
+    const uploadUrl = await this.s3Service.generatePresignedUploadUrl(key, contentType, 3600);
 
     return {
       fileId: fileRecord.id,
@@ -69,6 +66,8 @@ export class FilesService {
   }
 
   async completeAvatarUpload(fileId: string, userId: string) {
+    this.logger.log(`🔍 Complete avatar upload: fileId=${fileId}, userId=${userId}`);
+
     const fileRecord = await this.fileRepository.findOne({
       where: { id: fileId },
     });
@@ -76,6 +75,8 @@ export class FilesService {
     if (!fileRecord) {
       throw new NotFoundException('File not found');
     }
+
+    this.logger.log(`✅ Found file record: ${fileRecord.key}`);
 
     if (fileRecord.ownerId !== userId) {
       throw new ForbiddenException('You can only complete your own uploads');
@@ -85,42 +86,24 @@ export class FilesService {
       throw new BadRequestException(`File already ${fileRecord.status}`);
     }
 
-    this.logger.log(`✅ Completing upload for file ${fileId}`);
-
     fileRecord.status = FileStatus.READY;
     await this.fileRepository.save(fileRecord);
+    this.logger.log(`✅ File status updated to READY`);
 
     const avatarUrl = this.s3Service.getPublicUrl(fileRecord.key);
+    const signedAvatarUrl = await this.s3Service.generatePresignedDownloadUrl(fileRecord.key, 3600);
+    this.logger.log(`🔗 Avatar URL: ${avatarUrl}`);
 
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-
-    const oldAvatarFileId = user?.avatarFileId;
-
-    await this.userRepository.update(userId, {
+    await this.userService.updateAvatar(userId, {
       avatarUrl,
       avatarFileId: fileId,
     });
 
-    if (oldAvatarFileId && oldAvatarFileId !== fileId) {
-      try {
-        const oldFile = await this.fileRepository.findOne({
-          where: { id: oldAvatarFileId },
-        });
-        if (oldFile) {
-          await this.s3Service.deleteFile(oldFile.key);
-          await this.fileRepository.delete(oldAvatarFileId);
-          this.logger.log(`🗑️  Deleted old avatar: ${oldFile.key}`);
-        }
-      } catch (error) {
-        this.logger.warn(`Failed to delete old avatar: ${error.message}`);
-      }
-    }
+    this.logger.log(`✅ User avatar updated via UserService`);
 
     return {
       fileId: fileRecord.id,
-      url: avatarUrl,
+      url: signedAvatarUrl,
       key: fileRecord.key,
     };
   }
@@ -136,12 +119,6 @@ export class FilesService {
 
     if (fileRecord.visibility === FileVisibility.PRIVATE && fileRecord.ownerId !== userId) {
       throw new ForbiddenException('Access denied');
-    }
-
-    if (fileRecord.visibility === FileVisibility.PUBLIC) {
-      return {
-        url: this.s3Service.getPublicUrl(fileRecord.key),
-      };
     }
 
     const url = await this.s3Service.generatePresignedDownloadUrl(fileRecord.key, 3600);

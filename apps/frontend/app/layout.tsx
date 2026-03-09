@@ -26,23 +26,68 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSession();
+  const backendUrl =
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    'http://api:3000';
+
+  let hydratedUser =
+    session?.user
+      ? {
+          id: String(session.user.id),
+          name: session.user.name,
+          avatarUrl: session.user.avatarUrl ?? null,
+        }
+      : null;
+
+  if (session?.user?.id) {
+    try {
+      const latestUserUrl = session.user.email
+        ? `${backendUrl}/user/${encodeURIComponent(session.user.email)}`
+        : `${backendUrl}/user/id/${String(session.user.id)}`;
+
+      const response = await fetch(latestUserUrl, { cache: 'no-store' });
+
+      if (response.ok) {
+        const latestUser = (await response.json()) as {
+          id: string;
+          name: string;
+          email?: string;
+          avatarUrl?: string | null;
+          avatarFileId?: string | null;
+        };
+
+        let resolvedAvatarUrl = latestUser.avatarUrl ?? null;
+
+        if (latestUser.avatarFileId) {
+          const fileUrlResponse = await fetch(
+            `${backendUrl}/files/${latestUser.avatarFileId}/url?userId=${encodeURIComponent(
+              String(latestUser.id),
+            )}`,
+            { cache: 'no-store' },
+          );
+
+          if (fileUrlResponse.ok) {
+            const fileUrlData = (await fileUrlResponse.json()) as { url?: string };
+            resolvedAvatarUrl = fileUrlData.url ?? resolvedAvatarUrl;
+          }
+        }
+
+        hydratedUser = {
+          id: String(latestUser.id),
+          name: latestUser.name,
+          avatarUrl: resolvedAvatarUrl,
+        };
+      }
+    } catch {}
+  }
 
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <UserStoreHydrator
-          user={
-            session?.user
-              ? {
-                  id: String(session.user.id),
-                  name: session.user.name,
-                  avatarUrl: session.user.avatarUrl ?? null,
-                }
-              : null
-          }
-        />
+        <UserStoreHydrator user={hydratedUser} />
         <AppBar />
         {children}
       </body>

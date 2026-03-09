@@ -17,34 +17,32 @@ interface UploadAvatarParams {
   userId: string;
 }
 
-/**
- * Загружает аватар пользователя в S3 через presigned URL
- *
- * @param file - Файл изображения
- * @param userId - ID пользователя
- * @returns URL загруженного аватара
- */
+function getApiUrl() {
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
+  return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://api:3000';
+}
+
 export async function uploadAvatar({
   file,
   userId,
 }: UploadAvatarParams): Promise<string> {
+  const apiUrl = getApiUrl();
+
   try {
-    console.log('Starting avatar upload:', { file, userId });
-    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
-    // Шаг 1: Получить presigned URL с бекенда
-    const presignResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/files/upload-avatar`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentType: file.type,
-          userId,
-        }),
+    console.log('🚀 Step 1: Requesting presigned URL...');
+
+    const presignResponse = await fetch(`${apiUrl}/files/upload-avatar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        contentType: file.type,
+        userId,
+      }),
+    });
 
     if (!presignResponse.ok) {
       const error = await presignResponse.json();
@@ -52,8 +50,12 @@ export async function uploadAvatar({
     }
 
     const presignData: PresignedUploadResponse = await presignResponse.json();
+    console.log(
+      '✅ Got presigned URL:',
+      presignData.uploadUrl.substring(0, 50) + '...',
+    );
 
-    // Шаг 2: Загрузить файл напрямую в S3
+    console.log('🚀 Step 2: Uploading to S3...');
     const uploadResponse = await fetch(presignData.uploadUrl, {
       method: 'PUT',
       headers: {
@@ -63,23 +65,24 @@ export async function uploadAvatar({
     });
 
     if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('S3 upload failed:', errorText);
       throw new Error('Failed to upload file to S3');
     }
 
-    // Шаг 3: Уведомить бекенд о завершении загрузки
-    const completeResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/files/complete-avatar`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileId: presignData.fileId,
-          userId,
-        }),
+    console.log('✅ Uploaded to S3');
+
+    console.log('🚀 Step 3: Completing upload...');
+    const completeResponse = await fetch(`${apiUrl}/files/complete-avatar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        fileId: presignData.fileId,
+        userId,
+      }),
+    });
 
     if (!completeResponse.ok) {
       const error = await completeResponse.json();
@@ -87,18 +90,15 @@ export async function uploadAvatar({
     }
 
     const completeData: CompleteUploadResponse = await completeResponse.json();
+    console.log('✅ Upload completed:', completeData.url);
 
-    // Возвращаем URL аватара
     return completeData.url;
   } catch (error) {
-    console.error('Avatar upload error:', error);
+    console.error('❌ Avatar upload error:', error);
     throw error;
   }
 }
 
-/**
- * Загружает аватар с прогрессом
- */
 export async function uploadAvatarWithProgress({
   file,
   userId,
@@ -106,59 +106,49 @@ export async function uploadAvatarWithProgress({
 }: UploadAvatarParams & {
   onProgress?: (progress: number) => void;
 }): Promise<string> {
+  const apiUrl = getApiUrl();
+
   try {
-    // Шаг 1: Получить presigned URL
     onProgress?.(10);
-    const presignResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/files/upload-avatar`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentType: file.type,
-          userId,
-        }),
+    const presignResponse = await fetch(`${apiUrl}/files/upload-avatar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        contentType: file.type,
+        userId,
+      }),
+    });
 
     if (!presignResponse.ok) {
-      throw new Error('Failed to get upload URL');
+      const error = await presignResponse.json();
+      throw new Error(error.message || 'Failed to get upload URL');
     }
 
     const presignData: PresignedUploadResponse = await presignResponse.json();
     onProgress?.(20);
 
-    // Шаг 2: Загрузить с прогрессом через XMLHttpRequest
-    const uploadedUrl = await uploadFileWithProgress(
-      presignData.uploadUrl,
-      file,
-      (progress) => {
-        // Прогресс от 20% до 80%
-        onProgress?.(20 + Math.floor(progress * 0.6));
-      },
-    );
+    await uploadFileWithProgress(presignData.uploadUrl, file, (progress) => {
+      onProgress?.(20 + Math.floor(progress * 60));
+    });
 
     onProgress?.(80);
 
-    // Шаг 3: Завершить загрузку
-    const completeResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/files/complete-avatar`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileId: presignData.fileId,
-          userId,
-        }),
+    const completeResponse = await fetch(`${apiUrl}/files/complete-avatar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        fileId: presignData.fileId,
+        userId,
+      }),
+    });
 
     if (!completeResponse.ok) {
-      throw new Error('Failed to complete upload');
+      const error = await completeResponse.json();
+      throw new Error(error.message || 'Failed to complete upload');
     }
 
     const completeData: CompleteUploadResponse = await completeResponse.json();
@@ -171,14 +161,11 @@ export async function uploadAvatarWithProgress({
   }
 }
 
-/**
- * Helper: Загрузка с прогрессом через XMLHttpRequest
- */
 function uploadFileWithProgress(
   url: string,
   file: File,
   onProgress: (progress: number) => void,
-): Promise<string> {
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
@@ -191,7 +178,7 @@ function uploadFileWithProgress(
 
     xhr.addEventListener('load', () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(url);
+        resolve();
       } else {
         reject(new Error(`Upload failed with status ${xhr.status}`));
       }

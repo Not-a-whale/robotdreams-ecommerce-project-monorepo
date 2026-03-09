@@ -96,6 +96,7 @@ export async function signIn(
       user: {
         id: result.id,
         name: result.name,
+        email: result.email,
         avatarUrl: result.avatarUrl ?? null,
       },
       accessToken: result?.accessToken,
