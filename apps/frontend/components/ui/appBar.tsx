@@ -13,6 +13,7 @@ const AppBar = async () => {
             <p>Welcome, {session?.user?.name}!</p>
             <Link href={'/'}>Home</Link>
             <Link href={'/dashboard'}>Dashboard</Link>
+            <Link href={'/profile'}>Profile</Link>
           </>
         )}
           <div className="ml-auto mr-4">
