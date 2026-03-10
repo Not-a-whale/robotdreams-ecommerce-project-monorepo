@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { FormState, LoginFormSchema, SignupFormSchema } from './type';
-import { createSession } from './session';
+import { createSession, getSession } from './session';
 import { cookies } from 'next/headers';
 
 const backendUrl =
@@ -12,6 +12,148 @@ const backendUrl =
   'http://api:3000';
 
 console.log('backendUrl', backendUrl);
+
+export type HydratedUser = {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+};
+
+type BackendUser = {
+  id: string | number;
+  name: string;
+  email?: string;
+  avatarUrl?: string | null;
+  avatarFileId?: string | null;
+};
+
+const resolveAvatarUrl = async (
+  user: BackendUser,
+): Promise<string | null> => {
+  const resolvedAvatarUrl = user.avatarUrl ?? null;
+
+  if (!user.avatarFileId) {
+    return resolvedAvatarUrl;
+  }
+
+  const fileUrlResponse = await fetch(
+    `${backendUrl}/files/${user.avatarFileId}/url?userId=${encodeURIComponent(String(user.id))}`,
+    { cache: 'no-store' },
+  );
+
+  if (!fileUrlResponse.ok) {
+    return resolvedAvatarUrl;
+  }
+
+  const fileUrlData = (await fileUrlResponse.json()) as { url?: string };
+  return fileUrlData.url ?? resolvedAvatarUrl;
+};
+
+const getUserByIdentity = async (
+  user: Pick<BackendUser, 'id' | 'email'>,
+): Promise<BackendUser | null> => {
+  const latestUserUrl = user.email
+    ? `${backendUrl}/user/${encodeURIComponent(user.email)}`
+    : `${backendUrl}/user/id/${encodeURIComponent(String(user.id))}`;
+
+  const response = await fetch(latestUserUrl, { cache: 'no-store' });
+  if (!response.ok) {
+    return null;
+  }
+
+  return (await response.json()) as BackendUser;
+};
+
+// Legacy hydration source kept for fallback while transitioning to protected-user JSON.
+export async function getHydratedUserFromSessionSource(): Promise<HydratedUser | null> {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    const latestUser = await getUserByIdentity({
+      id: String(session.user.id),
+      email: session.user.email,
+    });
+
+    if (!latestUser) {
+      return {
+        id: String(session.user.id),
+        name: session.user.name,
+        avatarUrl: session.user.avatarUrl ?? null,
+      };
+    }
+
+    const resolvedAvatarUrl = await resolveAvatarUrl(latestUser);
+
+    return {
+      id: String(latestUser.id),
+      name: latestUser.name,
+      avatarUrl: resolvedAvatarUrl,
+    };
+  } catch {
+    return {
+      id: String(session.user.id),
+      name: session.user.name,
+      avatarUrl: session.user.avatarUrl ?? null,
+    };
+  }
+}
+
+export async function getHydratedProtectedUser(): Promise<HydratedUser | null> {
+  const session = await getSession();
+  console.log('Session data:', session);
+  if (!session?.user?.id || !session.accessToken) {
+    return null;
+  }
+  console.log('Session has user and access token, proceeding to fetch protected resource.');
+  const fallbackUser: HydratedUser = {
+    id: String(session.user.id),
+    name: session.user.name,
+    avatarUrl: session.user.avatarUrl ?? null,
+  };
+
+  try {
+    console.log('Fetching protected resource with access token:', session.accessToken);
+    const response = await fetch(`${backendUrl}/auth/protected`, {
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      cache: 'no-store',
+    });
+    console.log('Protected resource response:', response);
+    if (!response.ok) {
+      return fallbackUser;
+    }
+
+    const protectedUser = (await response.json()) as BackendUser;
+    const identityUser: BackendUser = {
+      id: protectedUser.id,
+      email: protectedUser.email,
+      name: protectedUser.name,
+      avatarUrl: protectedUser.avatarUrl ?? null,
+      avatarFileId: protectedUser.avatarFileId ?? null,
+    };
+
+    const latestUser = await getUserByIdentity({
+      id: identityUser.id,
+      email: identityUser.email,
+    });
+
+    const avatarSource = latestUser ?? identityUser;
+    const resolvedAvatarUrl = await resolveAvatarUrl(avatarSource);
+
+    return {
+      id: String(identityUser.id),
+      name: identityUser.name,
+      avatarUrl: resolvedAvatarUrl,
+    };
+  } catch {
+    return fallbackUser;
+  }
+}
 
 export async function signUp(
   state: FormState,

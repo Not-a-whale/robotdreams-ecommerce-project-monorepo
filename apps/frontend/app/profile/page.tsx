@@ -3,7 +3,7 @@
 import { AvatarUploader } from '@/components/AvatarUploader';
 import { useUserStore } from '@/store/user-store';
 
-export default function ProfilePage() {
+const ProfilePage = () => {
   const user = useUserStore((state) => state.user);
   const setAvatarUrl = useUserStore((state) => state.setAvatarUrl);
 
@@ -27,3 +27,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+export default ProfilePage;

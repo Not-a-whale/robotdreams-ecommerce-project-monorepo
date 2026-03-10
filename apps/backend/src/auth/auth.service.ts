@@ -1,14 +1,19 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
 import { verify } from 'argon2';
 import { JwtService } from '@nestjs/jwt';
+import refreshConfig from './config/refresh.config';
+import type { ConfigType } from '@nestjs/config';
+import type { AuthUser } from './types/auth-user.type';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    @Inject(refreshConfig.KEY)
+    private readonly refreshTokenConfig: ConfigType<typeof refreshConfig>,
   ) {}
   async registerUser(createUserDto: CreateUserDto) {
     const user = await this.userService.findByEmail(createUserDto.email);
@@ -34,23 +39,29 @@ export class AuthService {
       avatarUrl: user.avatarUrl ?? null,
     };
   }
-  async login(userId: number, name?: string) {
-    const { accessToken } = await this.generateToken(userId, name);
+  async login(user: AuthUser) {
+    const { accessToken, refreshToken } = await this.generateToken(user.id, user.name);
     return {
-      id: userId,
-      name,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl ?? null,
       accessToken,
+      refreshToken,
     };
   }
 
-  async generateToken(userId: number, name?: string) {
+  async generateToken(userId: string, name?: string) {
     const payload = { sub: userId, name };
-    const [accessToken] = await Promise.all([this.jwtService.signAsync(payload)]);
-    return { accessToken };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload),
+      this.jwtService.signAsync(payload, this.refreshTokenConfig),
+    ]);
+    return { accessToken, refreshToken };
   }
 
-  async validateJwtUser(userId: number) {
-    const user = await this.userService.findById(String(userId));
+  async validateJwtUser(userId: string) {
+    const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('Invalid token');
     return {
       id: user.id,
