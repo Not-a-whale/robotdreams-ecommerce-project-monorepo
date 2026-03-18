@@ -14,7 +14,7 @@ interface CompleteUploadResponse {
 
 interface UploadAvatarParams {
   file: File;
-  userId: string;
+  token: string;
 }
 
 function getApiUrl() {
@@ -26,7 +26,7 @@ function getApiUrl() {
 
 export async function uploadAvatar({
   file,
-  userId,
+  token,
 }: UploadAvatarParams): Promise<string> {
   const apiUrl = getApiUrl();
 
@@ -37,10 +37,10 @@ export async function uploadAvatar({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         contentType: file.type,
-        userId,
       }),
     });
 
@@ -77,10 +77,10 @@ export async function uploadAvatar({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         fileId: presignData.fileId,
-        userId,
       }),
     });
 
@@ -101,7 +101,7 @@ export async function uploadAvatar({
 
 export async function uploadAvatarWithProgress({
   file,
-  userId,
+  token,
   onProgress,
 }: UploadAvatarParams & {
   onProgress?: (progress: number) => void;
@@ -114,10 +114,10 @@ export async function uploadAvatarWithProgress({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         contentType: file.type,
-        userId,
       }),
     });
 
@@ -139,10 +139,10 @@ export async function uploadAvatarWithProgress({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         fileId: presignData.fileId,
-        userId,
       }),
     });
 

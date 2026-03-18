@@ -27,9 +27,7 @@ type BackendUser = {
   avatarFileId?: string | null;
 };
 
-const resolveAvatarUrl = async (
-  user: BackendUser,
-): Promise<string | null> => {
+const resolveAvatarUrl = async (user: BackendUser): Promise<string | null> => {
   const resolvedAvatarUrl = user.avatarUrl ?? null;
 
   if (!user.avatarFileId) {
@@ -102,13 +100,18 @@ export async function getHydratedUserFromSessionSource(): Promise<HydratedUser |
   }
 }
 
-export async function getHydratedProtectedUser(): Promise<HydratedUser | null> {
+export async function getHydratedProtectedUser(): Promise<{
+  user: HydratedUser | null;
+  token: string | null;
+}> {
   const session = await getSession();
   console.log('Session data:', session);
   if (!session?.user?.id || !session.accessToken) {
-    return null;
+    return { user: null, token: null };
   }
-  console.log('Session has user and access token, proceeding to fetch protected resource.');
+  console.log(
+    'Session has user and access token, proceeding to fetch protected resource.',
+  );
   const fallbackUser: HydratedUser = {
     id: String(session.user.id),
     name: session.user.name,
@@ -116,7 +119,10 @@ export async function getHydratedProtectedUser(): Promise<HydratedUser | null> {
   };
 
   try {
-    console.log('Fetching protected resource with access token:', session.accessToken);
+    console.log(
+      'Fetching protected resource with access token:',
+      session.accessToken,
+    );
     const response = await fetch(`${backendUrl}/auth/protected`, {
       headers: {
         Authorization: `Bearer ${session.accessToken}`,
@@ -125,7 +131,7 @@ export async function getHydratedProtectedUser(): Promise<HydratedUser | null> {
     });
     console.log('Protected resource response:', response);
     if (!response.ok) {
-      return fallbackUser;
+      return { user: fallbackUser, token: session.accessToken };
     }
 
     const protectedUser = (await response.json()) as BackendUser;
@@ -146,12 +152,15 @@ export async function getHydratedProtectedUser(): Promise<HydratedUser | null> {
     const resolvedAvatarUrl = await resolveAvatarUrl(avatarSource);
 
     return {
-      id: String(identityUser.id),
-      name: identityUser.name,
-      avatarUrl: resolvedAvatarUrl,
+      user: {
+        id: String(identityUser.id),
+        name: identityUser.name,
+        avatarUrl: resolvedAvatarUrl,
+      },
+      token: session.accessToken,
     };
   } catch {
-    return fallbackUser;
+    return { user: fallbackUser, token: session.accessToken };
   }
 }
 
@@ -181,7 +190,8 @@ export async function signUp(
       body: JSON.stringify(validationFields.data),
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     console.error('Sign-up request failed:', errorMessage);
     return {
       message: 'Unable to reach the backend service. Please try again.',
@@ -224,7 +234,8 @@ export async function signIn(
       body: JSON.stringify(validationFields.data),
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     console.error('Sign-in request failed:', errorMessage);
     return {
       message: 'Unable to reach the backend service. Please try again.',
@@ -259,3 +270,41 @@ export async function signOut() {
   (await cookies()).delete('session');
   redirect('/auth/signin');
 }
+
+export const refreshToken = async (oldRefreshToken: string) => {
+  try {
+    const response = await fetch(`${backendUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh: oldRefreshToken }),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Token refresh failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText,
+      });
+      throw new Error(`Token refresh failed: ${response.statusText}`);
+    }
+    const result = await response.json();
+    await createSession({
+      user: {
+        id: result.id,
+        name: result.name,
+        email: result.email,
+        avatarUrl: result.avatarUrl ?? null,
+      },
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    });
+    return result.accessToken;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    console.error('Token refresh request failed:', errorMessage);
+    throw new Error(`Token refresh request failed: ${errorMessage}`);
+  }
+};

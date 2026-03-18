@@ -35,7 +35,6 @@ export async function createSession(payload: Session) {
   });
 }
 
-
 export async function getSession() {
   const cookieStore = await cookies();
   const cookie = cookieStore.get('session')?.value;
@@ -56,4 +55,27 @@ export async function getSession() {
 export async function deleteSession() {
   const cookieStore = await cookies();
   await cookieStore.delete('session');
+}
+
+export async function updateTokens(accessToken: string, refreshToken: string) {
+  const cookie = (await cookies()).get('session')?.value;
+  if (!cookie) {
+    throw new Error('No session cookie found');
+  }
+
+  const { payload } = await jwtVerify(cookie, encodedKey);
+
+  if (!payload) {
+    throw new Error('Invalid session token');
+  }
+
+  const updatedSession: Session = {
+    user: {
+      ...(payload as Session).user,
+    },
+    accessToken,
+    refreshToken,
+  };
+
+  await createSession(updatedSession);
 }

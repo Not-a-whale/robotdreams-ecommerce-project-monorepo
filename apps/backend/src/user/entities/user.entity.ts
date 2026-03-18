@@ -1,5 +1,13 @@
+import { Exclude } from 'class-transformer';
 import { FileRecordEntity } from 'src/files/entities/file-record.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, JoinColumn, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
 
 @Entity('users')
 export class UserEntity {
@@ -16,6 +24,7 @@ export class UserEntity {
   createdAt: Date;
 
   @Column()
+  @Exclude()
   password: string;
 
   @Column({ name: 'avatar_url', nullable: true })

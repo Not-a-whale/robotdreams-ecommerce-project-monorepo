@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 interface AvatarUploaderProps {
-  userId: string;
+  token: string;
   currentAvatarUrl?: string;
   onUploadComplete?: (avatarUrl: string) => void;
 }
@@ -19,7 +19,7 @@ const ALLOWED_AVATAR_TYPES = [
 ];
 
 export function AvatarUploader({
-  userId,
+  token,
   currentAvatarUrl,
   onUploadComplete,
 }: AvatarUploaderProps) {
@@ -38,7 +38,9 @@ export function AvatarUploader({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    console.log(`🖼️ Avatar selected: ${file.name} (${file.type}, ${file.size} bytes)`);
+    console.log(
+      `🖼️ Avatar selected: ${file.name} (${file.type}, ${file.size} bytes)`,
+    );
 
     if (!file.type.startsWith('image/')) {
       setError('Please select an image file');
@@ -66,11 +68,11 @@ export function AvatarUploader({
     reader.readAsDataURL(file);
 
     try {
-      console.log(`🚀 Starting avatar upload for user: ${userId}`);
+      console.log('🚀 Starting avatar upload...');
 
       const avatarUrl = await uploadAvatarWithProgress({
         file,
-        userId,
+        token,
         onProgress: setProgress,
       });
 

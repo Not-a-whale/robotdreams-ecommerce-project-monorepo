@@ -4,6 +4,7 @@ import { CreateUserDto } from '../user/dto/create-user.dto';
 import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth/jwt-auth.guard';
 import type { AuthUser } from './types/auth-user.type';
+import { RefreshAuthGuard } from './guards/refresh-auth/refresh-auth.guard';
 
 type AuthRequest = {
   user: AuthUser;
@@ -34,5 +35,11 @@ export class AuthController {
       name: req.user.name,
       avatarUrl: req.user.avatarUrl ?? null,
     };
+  }
+
+  @UseGuards(RefreshAuthGuard)
+  @Post('refresh')
+  async refreshToken(@Request() req: AuthRequest) {
+    return this.authService.refreshToken(req.user.id);
   }
 }

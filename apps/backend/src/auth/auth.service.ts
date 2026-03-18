@@ -70,4 +70,27 @@ export class AuthService {
       avatarUrl: user.avatarUrl ?? null,
     };
   }
+
+  async validateRefreshToken(userId: string) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new UnauthorizedException('Invalid token');
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl ?? null,
+    };
+  }
+
+  async refreshToken(userId: string) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new UnauthorizedException('Invalid token');
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl ?? null,
+      ...(await this.generateToken(user.id, user.name)),
+    };
+  }
 }
