@@ -1,5 +1,5 @@
 import DataLoader from 'dataloader';
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { ProductEntity } from './product.entity';
