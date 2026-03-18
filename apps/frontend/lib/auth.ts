@@ -82,13 +82,13 @@ const getUserByIdentity = async (
   return (await response.json()) as BackendUser;
 };
 
-// Legacy hydration source kept for fallback while transitioning to protected-user JSON.
 export async function getHydratedUserFromSessionSource(): Promise<HydratedUser | null> {
   const session = await getSession();
 
   if (!session?.user?.id) {
     return null;
   }
+
 
   try {
     const latestUser = await getUserByIdentity({
