@@ -27,16 +27,28 @@ type BackendUser = {
   avatarFileId?: string | null;
 };
 
-const resolveAvatarUrl = async (user: BackendUser): Promise<string | null> => {
+const resolveAvatarUrl = async (
+  user: BackendUser,
+  accessToken?: string,
+): Promise<string | null> => {
   const resolvedAvatarUrl = user.avatarUrl ?? null;
 
   if (!user.avatarFileId) {
     return resolvedAvatarUrl;
   }
 
+  if (!accessToken) {
+    return resolvedAvatarUrl;
+  }
+
   const fileUrlResponse = await fetch(
     `${backendUrl}/files/${user.avatarFileId}/url?userId=${encodeURIComponent(String(user.id))}`,
-    { cache: 'no-store' },
+    {
+      cache: 'no-store',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
   );
 
   if (!fileUrlResponse.ok) {
@@ -92,7 +104,7 @@ export async function getHydratedUserFromSessionSource(): Promise<HydratedUser |
       };
     }
 
-    const resolvedAvatarUrl = await resolveAvatarUrl(latestUser);
+    const resolvedAvatarUrl = await resolveAvatarUrl(latestUser, session.accessToken);
 
     return {
       id: String(latestUser.id),
@@ -151,7 +163,7 @@ export async function getHydratedProtectedUser(): Promise<{
       avatarFileId: protectedUser.avatarFileId ?? null,
     };
 
-    const resolvedAvatarUrl = await resolveAvatarUrl(identityUser);
+    const resolvedAvatarUrl = await resolveAvatarUrl(identityUser, session.accessToken);
 
     return {
       user: {
