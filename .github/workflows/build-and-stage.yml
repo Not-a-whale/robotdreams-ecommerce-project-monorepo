@@ -1,10 +1,12 @@
 name: Build And Stage
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop
       - main
+      - master
 
 permissions:
   contents: read
@@ -98,7 +100,7 @@ jobs:
 
   deploy-stage:
     needs: build-artifact
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: stage
     permissions:
