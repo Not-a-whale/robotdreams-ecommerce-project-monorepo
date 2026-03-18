@@ -49,12 +49,20 @@ const resolveAvatarUrl = async (user: BackendUser): Promise<string | null> => {
 
 const getUserByIdentity = async (
   user: Pick<BackendUser, 'id' | 'email'>,
+  accessToken?: string,
 ): Promise<BackendUser | null> => {
-  const latestUserUrl = user.email
-    ? `${backendUrl}/user/${encodeURIComponent(user.email)}`
-    : `${backendUrl}/user/id/${encodeURIComponent(String(user.id))}`;
+  if (!accessToken) {
+    return null;
+  }
 
-  const response = await fetch(latestUserUrl, { cache: 'no-store' });
+  const latestUserUrl = `${backendUrl}/user/id/${encodeURIComponent(String(user.id))}`;
+
+  const response = await fetch(latestUserUrl, {
+    cache: 'no-store',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
   if (!response.ok) {
     return null;
   }
@@ -74,7 +82,7 @@ export async function getHydratedUserFromSessionSource(): Promise<HydratedUser |
     const latestUser = await getUserByIdentity({
       id: String(session.user.id),
       email: session.user.email,
-    });
+    }, session.accessToken);
 
     if (!latestUser) {
       return {
@@ -143,13 +151,7 @@ export async function getHydratedProtectedUser(): Promise<{
       avatarFileId: protectedUser.avatarFileId ?? null,
     };
 
-    const latestUser = await getUserByIdentity({
-      id: identityUser.id,
-      email: identityUser.email,
-    });
-
-    const avatarSource = latestUser ?? identityUser;
-    const resolvedAvatarUrl = await resolveAvatarUrl(avatarSource);
+    const resolvedAvatarUrl = await resolveAvatarUrl(identityUser);
 
     return {
       user: {

@@ -44,7 +44,17 @@ export class UserService {
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    return this.userRepository.findOne({ where: { email } });
+    return this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'name', 'email', 'avatarUrl', 'avatarFileId', 'createdAt'],
+    });
+  }
+
+  async findByEmailWithPassword(email: string): Promise<UserEntity | null> {
+    return this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'name', 'email', 'password', 'avatarUrl', 'avatarFileId', 'createdAt'],
+    });
   }
 
   async getAll(): Promise<UserEntity[]> {

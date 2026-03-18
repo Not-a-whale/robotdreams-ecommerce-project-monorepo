@@ -15,6 +15,11 @@ export class AuthService {
     @Inject(refreshConfig.KEY)
     private readonly refreshTokenConfig: ConfigType<typeof refreshConfig>,
   ) {}
+
+  private normalizeAvatarFileId(value: unknown): string | null {
+    return typeof value === 'string' && value.length > 0 ? value : null;
+  }
+
   async registerUser(createUserDto: CreateUserDto) {
     const user = await this.userService.findByEmail(createUserDto.email);
     if (user) {
@@ -24,7 +29,7 @@ export class AuthService {
   }
 
   async validateLocalUser(email: string, password: string) {
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmailWithPassword(email);
     console.log('Validating user:', { email, user });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -37,6 +42,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       avatarUrl: user.avatarUrl ?? null,
+      avatarFileId: this.normalizeAvatarFileId(user.avatarFileId),
     };
   }
   async login(user: AuthUser) {
@@ -46,6 +52,7 @@ export class AuthService {
       name: user.name,
       email: user.email,
       avatarUrl: user.avatarUrl ?? null,
+      avatarFileId: this.normalizeAvatarFileId(user.avatarFileId),
       accessToken,
       refreshToken,
     };
@@ -68,6 +75,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       avatarUrl: user.avatarUrl ?? null,
+      avatarFileId: this.normalizeAvatarFileId(user.avatarFileId),
     };
   }
 
@@ -79,6 +87,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       avatarUrl: user.avatarUrl ?? null,
+      avatarFileId: this.normalizeAvatarFileId(user.avatarFileId),
     };
   }
 
@@ -90,6 +99,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       avatarUrl: user.avatarUrl ?? null,
+      avatarFileId: this.normalizeAvatarFileId(user.avatarFileId),
       ...(await this.generateToken(user.id, user.name)),
     };
   }

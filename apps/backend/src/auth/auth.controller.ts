@@ -1,4 +1,12 @@
-import { Body, Controller, Post, UseGuards, Request, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UseGuards,
+  Request,
+  Get,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
@@ -28,13 +36,20 @@ export class AuthController {
 
   @Get('protected')
   @UseGuards(JwtAuthGuard)
-  getProtectedResource(@Request() req: AuthRequest): AuthUser {
-    return {
-      id: req.user.id,
-      email: req.user.email,
-      name: req.user.name,
-      avatarUrl: req.user.avatarUrl ?? null,
-    };
+  async getProtectedResource(@Request() req: AuthRequest): Promise<AuthUser> {
+    const rawUser = (req as unknown as { user?: unknown }).user;
+
+    if (!rawUser || typeof rawUser !== 'object') {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
+    const authUser = rawUser as { id?: unknown };
+
+    if (typeof authUser.id !== 'string') {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
+    return this.authService.validateJwtUser(authUser.id);
   }
 
   @UseGuards(RefreshAuthGuard)
