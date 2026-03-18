@@ -30,7 +30,6 @@ export class AuthService {
 
   async validateLocalUser(email: string, password: string) {
     const user = await this.userService.findByEmailWithPassword(email);
-    console.log('Validating user:', { email, user });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isPasswordValid = await verify(user.password, password);
