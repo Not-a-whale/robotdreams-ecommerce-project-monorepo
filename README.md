@@ -235,3 +235,61 @@ docker compose down --rmi all
 - ✅ Hot reload in development
 - ✅ Database migrations
 - ✅ Healthchecks
+
+## ⚙️ CI/CD Pipeline
+
+This repository includes a full GitHub Actions pipeline with separated stages:
+
+- PR checks: `.github/workflows/pr-checks.yml`
+- Build + stage deploy: `.github/workflows/build-and-stage.yml`
+- Production deploy (manual): `.github/workflows/deploy-prod.yml`
+
+### Branch Strategy
+
+- `feature/*` -> open PR into `develop`
+- `develop` -> automatic build + stage deploy
+- `main` -> production deploy via manual trigger + production approval
+
+### Immutable Artifact
+
+- Docker images are pushed to GHCR as:
+  - `ghcr.io/<owner>/ecommerce-api:sha-<commit>`
+  - `ghcr.io/<owner>/ecommerce-worker:sha-<commit>`
+- `release-manifest.json` is generated during build and uploaded as workflow artifact
+- Production deploy reuses image tag from build (no rebuild)
+
+### Required GitHub Setup
+
+1. Create environments:
+- `stage`
+- `production` (enable Required reviewers for manual approval)
+
+2. Add repository/environment secrets used in deploy jobs:
+- `DB_PORT`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `RABBITMQ_URL`
+- `RABBITMQ_USER`
+- `RABBITMQ_PASSWORD`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `REFRESH_JWT_SECRET`
+- `REFRESH_JWT_EXPIRES_IN`
+- `AWS_REGION`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `S3_BUCKET`
+- `S3_ENDPOINT`
+
+3. Optional environment variables:
+- `STAGE_SMOKE_URL` (example: `http://localhost:8080/health`)
+- `PROD_SMOKE_URL` (example: `https://api.example.com/health`)
+
+### End-to-End Flow
+
+1. Push to `feature/*` and open PR to `develop`
+2. `PR Checks` must pass (lint, unit tests, Docker build validation)
+3. Merge to `develop` -> image build + push + stage deploy + smoke check
+4. Deploy to production by running `Deploy Production` workflow and passing `image_tag` (for example `sha-<commit>`)
+5. Approve deployment in `production` environment when prompted

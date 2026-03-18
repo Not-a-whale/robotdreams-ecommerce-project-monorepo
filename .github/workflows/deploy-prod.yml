@@ -1,0 +1,87 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Immutable image tag from build-and-stage workflow (example: sha-<commit>)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build image reference from input
+        id: image
+        shell: bash
+        run: |
+          OWNER_LC="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          API_IMAGE_REF="ghcr.io/${OWNER_LC}/ecommerce-api:${{ github.event.inputs.image_tag }}"
+          WORKER_IMAGE_REF="ghcr.io/${OWNER_LC}/ecommerce-worker:${{ github.event.inputs.image_tag }}"
+          echo "api_image_ref=${API_IMAGE_REF}" >> "$GITHUB_OUTPUT"
+          echo "worker_image_ref=${WORKER_IMAGE_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR for pull
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Prepare runtime environment file
+        shell: bash
+        run: |
+          cat > apps/backend/.env <<EOF
+          DB_HOST=postgres
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
+          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+          WORKER_MODE=false
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+          REFRESH_JWT_SECRET=${{ secrets.REFRESH_JWT_SECRET }}
+          REFRESH_JWT_EXPIRES_IN=${{ secrets.REFRESH_JWT_EXPIRES_IN }}
+          PORT=3000
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET=${{ secrets.S3_BUCKET }}
+          S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}
+          EOF
+
+      - name: Make deploy script executable
+        run: chmod +x scripts/deploy-compose.sh
+
+      - name: Deploy to production (no rebuild)
+        env:
+          API_IMAGE_REF: ${{ steps.image.outputs.api_image_ref }}
+          WORKER_IMAGE_REF: ${{ steps.image.outputs.worker_image_ref }}
+          RUN_MIGRATIONS: 'true'
+          SMOKE_URL: ${{ vars.PROD_SMOKE_URL }}
+        run: bash scripts/deploy-compose.sh production
+
+      - name: Deployment log
+        run: |
+          echo "Production deploy complete"
+          echo "Commit SHA (workflow): ${{ github.sha }}"
+          echo "API image: ${{ steps.image.outputs.api_image_ref }}"
+          echo "Worker image: ${{ steps.image.outputs.worker_image_ref }}"
+          echo "Target environment: production"
