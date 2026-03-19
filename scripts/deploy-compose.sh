@@ -46,6 +46,7 @@ done
 
 if [[ "${RUN_MIGRATIONS:-false}" == "true" ]]; then
   echo "Running migrations..."
+  docker compose -f compose.yml -f compose.deploy.yml build migrate
   docker compose -f compose.yml -f compose.deploy.yml run --rm migrate
 fi
 

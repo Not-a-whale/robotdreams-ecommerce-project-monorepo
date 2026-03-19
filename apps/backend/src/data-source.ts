@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+try { require('tsconfig-paths/register'); } catch {}
+/* eslint-enable @typescript-eslint/no-require-imports */
+
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
 import { UserEntity } from './user/entities/user.entity';
