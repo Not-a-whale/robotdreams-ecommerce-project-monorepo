@@ -43,4 +43,8 @@ done
 
 echo "Smoke test failed: ${SMOKE_URL}"
 docker compose -f compose.yml -f compose.deploy.yml ps
+echo "--- API container logs ---"
+docker compose -f compose.yml -f compose.deploy.yml logs --tail=80 api
+echo "--- Worker container logs ---"
+docker compose -f compose.yml -f compose.deploy.yml logs --tail=40 worker
 exit 1
