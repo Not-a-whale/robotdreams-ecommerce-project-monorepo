@@ -14,6 +14,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     const secret = jwtConfiguration.secret;
 
+    if (!secret && process.env.WORKER_MODE === 'true') {
+      // Worker never handles HTTP requests; use a placeholder to avoid crash
+      super({
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        secretOrKey: 'worker-placeholder',
+        ignoreExpiration: false,
+      });
+      return;
+    }
+
     if (!secret) {
       throw new Error('JWT secret is not configured');
     }

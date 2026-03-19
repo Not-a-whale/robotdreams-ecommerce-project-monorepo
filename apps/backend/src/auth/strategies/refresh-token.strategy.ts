@@ -14,6 +14,15 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh-jwt') {
   ) {
     const secret = refreshConfiguration.secret;
 
+    if (!secret && process.env.WORKER_MODE === 'true') {
+      super({
+        jwtFromRequest: ExtractJwt.fromBodyField('refresh'),
+        secretOrKey: 'worker-placeholder',
+        ignoreExpiration: false,
+      });
+      return;
+    }
+
     if (!secret) {
       throw new Error('JWT secret is not configured');
     }
