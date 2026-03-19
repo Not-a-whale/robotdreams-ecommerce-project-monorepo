@@ -7,7 +7,5 @@ export class AddOrdersUserCreatedAtIndex1700000000000 implements MigrationInterf
     // no-op: schema is created by later auto-generated migrations
   }
 
-  public async down(_queryRunner: QueryRunner): Promise<void> {
-    // no-op
-  }
+  public async down(_queryRunner: QueryRunner): Promise<void> {}
 }
