@@ -165,6 +165,16 @@ jobs:
       - name: Verify critical env vars
         shell: bash
         run: |
+          echo "=== Diagnostic: checking secrets at expression level ==="
+          echo "JWT_SECRET is set: ${{ secrets.JWT_SECRET != '' }}"
+          echo "REFRESH_JWT_SECRET is set: ${{ secrets.REFRESH_JWT_SECRET != '' }}"
+          echo "DB_PASSWORD is set: ${{ secrets.DB_PASSWORD != '' }}"
+          echo "=== Checking .env file content ==="
+          echo "Lines in .env: $(wc -l < .env)"
+          echo "JWT_SECRET line: $(grep -c '^JWT_SECRET=' .env) matches"
+          grep '^JWT_SECRET=' .env | awk -F= '{print "JWT_SECRET value length:", length($2)}'
+          grep '^DB_PASSWORD=' .env | awk -F= '{print "DB_PASSWORD value length:", length($2)}'
+          echo "==="
           MISSING=""
           for VAR in JWT_SECRET REFRESH_JWT_SECRET DB_PASSWORD; do
             VAL=$(grep "^${VAR}=" .env | cut -d= -f2-)
@@ -175,7 +185,7 @@ jobs:
             fi
           done
           if [[ -n "$MISSING" ]]; then
-            echo "::error::Missing critical secrets:${MISSING}. Add them in GitHub Settings → Secrets."
+            echo "::error::Missing critical secrets:${MISSING}. Add them as REPOSITORY secrets in GitHub Settings → Secrets and variables → Actions → Repository secrets (NOT environment secrets, NOT variables)."
             exit 1
           fi
 
