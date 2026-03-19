@@ -162,6 +162,23 @@ jobs:
           echo "Generated .env with $(wc -l < "$F") lines"
           cp "$F" .env
 
+      - name: Verify critical env vars
+        shell: bash
+        run: |
+          MISSING=""
+          for VAR in JWT_SECRET REFRESH_JWT_SECRET DB_PASSWORD; do
+            VAL=$(grep "^${VAR}=" .env | cut -d= -f2-)
+            if [[ -z "$VAL" ]]; then
+              MISSING="${MISSING} ${VAR}"
+            else
+              echo "${VAR}: set (${#VAL} chars)"
+            fi
+          done
+          if [[ -n "$MISSING" ]]; then
+            echo "::error::Missing critical secrets:${MISSING}. Add them in GitHub Settings → Secrets."
+            exit 1
+          fi
+
       - name: Make deploy script executable
         run: chmod +x scripts/deploy-compose.sh
 

@@ -21,6 +21,14 @@ echo "Commit SHA: ${GITHUB_SHA:-unknown}"
 echo "API image: ${API_IMAGE_REF}"
 echo "Worker image: ${WORKER_IMAGE_REF}"
 
+# Export .env variables so Docker Compose can interpolate ${VAR} in compose.yml
+if [[ -f .env ]]; then
+  set -a
+  source .env
+  set +a
+  echo "Loaded $(wc -l < .env) env vars from root .env"
+fi
+
 echo "Pulling immutable images..."
 docker compose -f compose.yml -f compose.deploy.yml pull api worker
 
