@@ -4,15 +4,15 @@ export class Init1771672227538 implements MigrationInterface {
   name = 'Init1771672227538';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "products" ADD "external_id" integer`);
-    await queryRunner.query(`ALTER TABLE "products" ADD "short_description" text`);
-    await queryRunner.query(`ALTER TABLE "products" ADD "description" text`);
-    await queryRunner.query(`ALTER TABLE "products" ADD "sizes" text array`);
-    await queryRunner.query(`ALTER TABLE "products" ADD "colors" text array`);
-    await queryRunner.query(`ALTER TABLE "products" ADD "images" jsonb`);
-    await queryRunner.query(`ALTER TABLE "products" ADD "category_slug" character varying`);
+    await queryRunner.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "external_id" integer`);
+    await queryRunner.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "short_description" text`);
+    await queryRunner.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "description" text`);
+    await queryRunner.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "sizes" text array`);
+    await queryRunner.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "colors" text array`);
+    await queryRunner.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "images" jsonb`);
+    await queryRunner.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "category_slug" character varying`);
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "IDX_bbc46f4fc336522e99fc8782b4" ON "products" ("external_id") `,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_bbc46f4fc336522e99fc8782b4" ON "products" ("external_id") `,
     );
   }
 

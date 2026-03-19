@@ -28,7 +28,7 @@ export const dataSourceOptions: DataSourceOptions = {
   ],
   migrations: isTsRuntime ? ['src/migrations/*.ts'] : ['dist/migrations/*.js'],
   migrationsRun: false,
-  synchronize: true,
+  synchronize: process.env.NODE_ENV !== 'production',
   logging: true,
 };
 

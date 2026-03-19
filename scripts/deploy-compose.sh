@@ -24,13 +24,25 @@ echo "Worker image: ${WORKER_IMAGE_REF}"
 echo "Pulling immutable images..."
 docker compose -f compose.yml -f compose.deploy.yml pull api worker
 
-echo "Starting services without rebuild..."
-docker compose -f compose.yml -f compose.deploy.yml up -d --no-build postgres rabbitmq api worker
+echo "Starting infrastructure..."
+docker compose -f compose.yml -f compose.deploy.yml up -d --no-build postgres rabbitmq
+
+echo "Waiting for infrastructure readiness..."
+for _ in {1..15}; do
+  if docker compose -f compose.yml -f compose.deploy.yml exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
+    echo "Postgres is ready"
+    break
+  fi
+  sleep 2
+done
 
 if [[ "${RUN_MIGRATIONS:-false}" == "true" ]]; then
   echo "Running migrations..."
   docker compose -f compose.yml -f compose.deploy.yml run --rm migrate
 fi
+
+echo "Starting application services..."
+docker compose -f compose.yml -f compose.deploy.yml up -d --no-build api worker
 
 echo "Waiting for API readiness..."
 for _ in {1..30}; do
