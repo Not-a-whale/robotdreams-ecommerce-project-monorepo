@@ -137,27 +137,30 @@ jobs:
       - name: Prepare runtime environment file
         shell: bash
         run: |
-          cat > apps/backend/.env <<EOF
-          DB_HOST=postgres
-          DB_PORT=${{ secrets.DB_PORT }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
-          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
-          RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
-          WORKER_MODE=false
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
-          REFRESH_JWT_SECRET=${{ secrets.REFRESH_JWT_SECRET }}
-          REFRESH_JWT_EXPIRES_IN=${{ secrets.REFRESH_JWT_EXPIRES_IN }}
-          PORT=3000
-          AWS_REGION=${{ secrets.AWS_REGION }}
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          S3_BUCKET=${{ secrets.S3_BUCKET }}
-          S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}
-          EOF
+          F="apps/backend/.env"
+          : > "$F"
+          echo "DB_HOST=postgres" >> "$F"
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> "$F"
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> "$F"
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> "$F"
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> "$F"
+          echo "RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}" >> "$F"
+          echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> "$F"
+          echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> "$F"
+          echo "WORKER_MODE=false" >> "$F"
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> "$F"
+          echo "JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}" >> "$F"
+          echo "REFRESH_JWT_SECRET=${{ secrets.REFRESH_JWT_SECRET }}" >> "$F"
+          echo "REFRESH_JWT_EXPIRES_IN=${{ secrets.REFRESH_JWT_EXPIRES_IN }}" >> "$F"
+          echo "SESSION_SECRET_KEY=${{ secrets.SESSION_SECRET_KEY }}" >> "$F"
+          echo "PORT=3000" >> "$F"
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> "$F"
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> "$F"
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> "$F"
+          echo "S3_BUCKET=${{ secrets.S3_BUCKET }}" >> "$F"
+          echo "S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}" >> "$F"
+          echo "Generated .env with $(wc -l < "$F") lines"
+          cp "$F" .env
 
       - name: Make deploy script executable
         run: chmod +x scripts/deploy-compose.sh
