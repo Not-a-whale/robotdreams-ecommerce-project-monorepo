@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { FileRecordEntity } from 'src/files/entities/file-record.entity';
+import { FileRecordEntity } from '../../files/entities/file-record.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
