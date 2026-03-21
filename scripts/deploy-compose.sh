@@ -13,6 +13,11 @@ if [[ -z "${WORKER_IMAGE_REF:-}" ]]; then
   exit 1
 fi
 
+if [[ -z "${PAYMENTS_IMAGE_REF:-}" ]]; then
+  echo "PAYMENTS_IMAGE_REF is required"
+  exit 1
+fi
+
 SMOKE_URL_DEFAULT="http://localhost:${API_PORT:-8080}/health"
 SMOKE_URL="${SMOKE_URL:-$SMOKE_URL_DEFAULT}"
 
@@ -20,6 +25,7 @@ echo "Target environment: ${TARGET_ENV}"
 echo "Commit SHA: ${GITHUB_SHA:-unknown}"
 echo "API image: ${API_IMAGE_REF}"
 echo "Worker image: ${WORKER_IMAGE_REF}"
+echo "Payments image: ${PAYMENTS_IMAGE_REF}"
 
 # Export .env variables so Docker Compose can interpolate ${VAR} in compose.yml
 if [[ -f .env ]]; then
@@ -30,7 +36,7 @@ if [[ -f .env ]]; then
 fi
 
 echo "Pulling immutable images..."
-docker compose -f compose.yml -f compose.deploy.yml pull api worker
+docker compose -f compose.yml -f compose.deploy.yml pull payments api worker
 
 echo "Starting infrastructure..."
 docker compose -f compose.yml -f compose.deploy.yml up -d --no-build postgres rabbitmq
@@ -51,7 +57,7 @@ if [[ "${RUN_MIGRATIONS:-false}" == "true" ]]; then
 fi
 
 echo "Starting application services..."
-docker compose -f compose.yml -f compose.deploy.yml up -d --no-build api worker
+docker compose -f compose.yml -f compose.deploy.yml up -d --no-build payments api worker
 
 echo "Waiting for API readiness..."
 for _ in {1..30}; do
@@ -68,4 +74,6 @@ echo "--- API container logs ---"
 docker compose -f compose.yml -f compose.deploy.yml logs --tail=80 api
 echo "--- Worker container logs ---"
 docker compose -f compose.yml -f compose.deploy.yml logs --tail=40 worker
+echo "--- Payments container logs ---"
+docker compose -f compose.yml -f compose.deploy.yml logs --tail=40 payments
 exit 1

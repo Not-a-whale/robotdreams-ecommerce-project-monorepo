@@ -1,4 +1,8 @@
 services:
+  payments:
+    image: ${PAYMENTS_IMAGE_REF:?PAYMENTS_IMAGE_REF is required}
+    build: null
+
   api:
     image: ${API_IMAGE_REF:?API_IMAGE_REF is required}
     build: null
