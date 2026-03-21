@@ -14,6 +14,8 @@ import { ProductEntity } from '../products/product.entity';
 import { OrdersFilterInput } from './graphql/orders-filter.input';
 import { OrdersPaginationInput } from './graphql/orders-pagination.input';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
+import { PaymentsGrpcClientService } from 'src/payments/payments-grpc.client';
+import { paymentStatusToLabel } from 'src/payments/payment-status.util';
 
 type PgError = {
   code?: string;
@@ -45,6 +47,7 @@ export class OrdersService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly rabbitMQService: RabbitMQService,
+    private readonly paymentsGrpc: PaymentsGrpcClientService,
   ) {}
 
   async findAll(
@@ -129,6 +132,37 @@ export class OrdersService {
         await queryRunner.manager.save(orderItem);
       }
 
+      const productIds = dto.items.map((i) => i.productId);
+      const products = await queryRunner.manager
+        .createQueryBuilder(ProductEntity, 'p')
+        .where('p.id IN (:...ids)', { ids: productIds })
+        .setLock('pessimistic_write')
+        .getMany();
+
+      if (products.length !== productIds.length) {
+        throw new BadRequestException('Some products not found');
+      }
+      for (const item of dto.items) {
+        const product = products.find((p) => p.id === item.productId);
+        if (!product) throw new BadRequestException('Product is not found');
+        if (product.stock < item.qty) {
+          throw new ConflictException(`Not enough stock for ${product.name}`);
+        }
+      }
+      let total = 0;
+      for (const item of dto.items) {
+        const product = products.find((p) => p.id === item.productId);
+        total += product!.price * item.qty;
+      }
+
+      const currency = process.env.ORDER_PAYMENT_CURRENCY ?? 'UAH';
+      const pay = await this.paymentsGrpc.authorize({
+        orderId: order.id,
+        amount: total,
+        currency,
+        idempotencyKey,
+      });
+
       await queryRunner.commitTransaction();
 
       this.logger.log(`Order created: ${order.id}, messageId: ${messageId}`);
@@ -149,7 +183,14 @@ export class OrdersService {
         this.logger.error(`Failed to publish: ${errorMessage}`);
       }
 
-      return order;
+      return {
+        ...order,
+        paymentAuthorization: {
+          paymentId: pay.paymentId,
+          status: pay.status,
+          statusLabel: paymentStatusToLabel(pay.status),
+        },
+      };
     } catch (err) {
       await queryRunner.rollbackTransaction();
 
@@ -239,9 +280,24 @@ export class OrdersService {
         await queryRunner.manager.save(product);
       }
 
+      const currency = process.env.ORDER_PAYMENT_CURRENCY ?? 'UAH';
+      const pay = await this.paymentsGrpc.authorize({
+        orderId: order.id,
+        amount: total,
+        currency,
+        idempotencyKey,
+      });
+
       await queryRunner.commitTransaction();
 
-      return order;
+      return {
+        ...order,
+        paymentAuthorization: {
+          paymentId: pay.paymentId,
+          status: pay.status,
+          statusLabel: paymentStatusToLabel(pay.status),
+        },
+      };
     } catch (err) {
       console.error('createOrder failed:', err);
       await queryRunner.rollbackTransaction();

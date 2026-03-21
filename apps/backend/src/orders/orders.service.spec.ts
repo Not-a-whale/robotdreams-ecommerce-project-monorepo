@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { DataSource } from 'typeorm';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
+import { PaymentsGrpcClientService } from 'src/payments/payments-grpc.client';
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -37,6 +38,12 @@ describe('OrdersService', () => {
           provide: RabbitMQService,
           useValue: {
             publishToQueue: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: PaymentsGrpcClientService,
+          useValue: {
+            authorize: jest.fn().mockResolvedValue({ paymentId: 'pay-test', status: 1 }),
           },
         },
       ],

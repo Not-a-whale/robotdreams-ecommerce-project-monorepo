@@ -1,17 +1,24 @@
 'use server';
-
 import { getSession } from './session';
+import { authFetch } from './authFetch';
 
 const getProfile = async () => {
   const session = await getSession();
-  const response = await fetch(
+  if (!session?.accessToken) {
+    throw new Error('No session found');
+  }
+  const response = await authFetch(
     `${process.env.NEXT_PUBLIC_API_URL}/auth/protected`,
     {
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session.accessToken}`,
       },
+      cache: 'no-store',
     },
   );
-  const result = await response.json();
-  return result;
+  if (!response.ok) {
+    throw new Error(`Failed to load profile: ${response.status}`);
+  }
+  return response.json();
 };
+export { getProfile };

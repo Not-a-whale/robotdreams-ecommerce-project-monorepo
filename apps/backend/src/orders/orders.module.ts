@@ -10,12 +10,14 @@ import { OrdersResolver } from './orders-resolver';
 import { OrderItemResolver } from './order-item.resolver';
 import { ProductsModule } from 'src/products/products.module';
 import { RabbitMQModule } from 'src/rabbitmq/rabbitmq.module';
+import { PaymentsClientModule } from 'src/payments/payments-client.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([OrderEntity, OrderItemEntity, ProductEntity, UserEntity]),
     ProductsModule,
     RabbitMQModule,
+    PaymentsClientModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersResolver, OrderItemResolver],

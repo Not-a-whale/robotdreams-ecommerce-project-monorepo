@@ -303,22 +303,17 @@ export const refreshToken = async (oldRefreshToken: string) => {
       });
       throw new Error(`Token refresh failed: ${response.statusText}`);
     }
-    const result = await response.json();
-    await createSession({
-      user: {
-        id: result.id,
-        name: result.name,
-        email: result.email,
-        avatarUrl: result.avatarUrl ?? null,
-      },
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+    const { accessToken, refreshToken } = await response.json();
+    const updateRes = await fetch('/api/auth/update', {
+      method: 'POST',
+      body: JSON.stringify({ accessToken, refreshToken }),
     });
-    return result.accessToken;
+    if (!updateRes.ok) {
+      throw new Error('Failed to update tokens');
+    }
+    return accessToken;
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-    console.error('Token refresh request failed:', errorMessage);
-    throw new Error(`Token refresh request failed: ${errorMessage}`);
+    console.error('Token refresh failed:', error);
+    throw new Error('Failed to refresh token');
   }
 };
