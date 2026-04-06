@@ -6,6 +6,7 @@ import {
   Request,
   Get,
   UnauthorizedException,
+  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
@@ -13,6 +14,8 @@ import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth/jwt-auth.guard';
 import type { AuthUser } from './types/auth-user.type';
 import { RefreshAuthGuard } from './guards/refresh-auth/refresh-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth/google-auth.guard';
+import type { Response } from 'express';
 
 type AuthRequest = {
   user: AuthUser;
@@ -50,6 +53,28 @@ export class AuthController {
     }
 
     return this.authService.validateJwtUser(authUser.id);
+  }
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('google/login')
+  googleLogin() {}
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('google/callback')
+  async googleCallback(@Request() req: AuthRequest, @Res() res: Response) {
+    console.log('Google OAuth callback successful', req.user);
+    const result = await this.authService.login(req.user);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const redirectUrl = `${frontendUrl}/api/auth/callback?${new URLSearchParams({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      userId: result.id,
+      email: result.email,
+      name: result.name,
+      avatarUrl: result.avatarUrl ?? '',
+    }).toString()}`;
+
+    return res.redirect(redirectUrl);
   }
 
   @UseGuards(RefreshAuthGuard)

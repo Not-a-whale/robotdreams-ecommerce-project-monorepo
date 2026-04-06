@@ -1,7 +1,8 @@
 import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
-import { verify } from 'argon2';
+import { hash, verify } from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import refreshConfig from './config/refresh.config';
 import type { ConfigType } from '@nestjs/config';
@@ -46,6 +47,8 @@ export class AuthService {
   }
   async login(user: AuthUser) {
     const { accessToken, refreshToken } = await this.generateToken(user.id, user.name);
+    const hashedRT = await hash(refreshToken);
+    await this.userService.updateHashedRefreshToken(user.id, hashedRT);
     return {
       id: user.id,
       name: user.name,
@@ -63,6 +66,8 @@ export class AuthService {
       this.jwtService.signAsync(payload),
       this.jwtService.signAsync(payload, this.refreshTokenConfig),
     ]);
+    const hashedRT = await hash(refreshToken);
+    await this.userService.updateHashedRefreshToken(userId, hashedRT);
     return { accessToken, refreshToken };
   }
 
@@ -78,9 +83,12 @@ export class AuthService {
     };
   }
 
-  async validateRefreshToken(userId: string) {
+  async validateRefreshToken(userId: string, refreshToken: string) {
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('Invalid token');
+
+    const isRefreshTokenValid = await verify(user.hashedRefreshToken, refreshToken);
+    if (!isRefreshTokenValid) throw new UnauthorizedException('Invalid token');
     return {
       id: user.id,
       email: user.email,
@@ -100,6 +108,34 @@ export class AuthService {
       avatarUrl: user.avatarUrl ?? null,
       avatarFileId: this.normalizeAvatarFileId(user.avatarFileId),
       ...(await this.generateToken(user.id, user.name)),
+    };
+  }
+
+  async validateGoogleUser(profile: CreateUserDto) {
+    const existingUser = await this.userService.findByEmail(profile.email);
+
+    if (existingUser) {
+      return {
+        id: existingUser.id,
+        email: existingUser.email,
+        name: existingUser.name,
+        avatarUrl: existingUser.avatarUrl ?? null,
+        avatarFileId: this.normalizeAvatarFileId(existingUser.avatarFileId),
+      };
+    }
+
+    const createdUser = await this.userService.create({
+      email: profile.email,
+      name: profile.name,
+      password: randomUUID(),
+    });
+
+    return {
+      id: createdUser.id,
+      email: createdUser.email,
+      name: createdUser.name,
+      avatarUrl: createdUser.avatarUrl ?? null,
+      avatarFileId: this.normalizeAvatarFileId(createdUser.avatarFileId),
     };
   }
 }

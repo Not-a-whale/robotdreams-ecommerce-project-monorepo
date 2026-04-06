@@ -94,4 +94,15 @@ export class UserService {
       avatarFileId: user.avatarFileId,
     });
   }
+
+  async updateHashedRefreshToken(id: string, hashedRT: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.hashedRefreshToken = hashedRT;
+    await this.userRepository.save(user);
+  }
 }

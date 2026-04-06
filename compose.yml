@@ -72,6 +72,7 @@ services:
       DB_NAME: ${DB_NAME:-ecommerce}
       JWT_SECRET: ${JWT_SECRET}
       SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin}@rabbitmq:5672
       WORKER_MODE: 'false'
       PORT: 3000
@@ -105,6 +106,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       DB_NAME: ${DB_NAME:-ecommerce}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin}@rabbitmq:5672
       WORKER_MODE: 'true'
     networks:
@@ -128,6 +130,7 @@ services:
       NODE_ENV: production
       BACKEND_URL: http://api:3000
       NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:${API_PORT:-8080}
     networks:
       - public
     depends_on:

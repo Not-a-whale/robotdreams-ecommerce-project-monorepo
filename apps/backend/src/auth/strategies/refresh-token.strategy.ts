@@ -1,9 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthJwtPayload } from '../types/auth-jwtPayload';
 import { AuthService } from '../auth.service';
 import { PassportStrategy } from '@nestjs/passport';
 import refreshConfig from '../config/refresh.config';
+import type { Request } from 'express';
 
 @Injectable()
 export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh-jwt') {
@@ -19,6 +20,7 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh-jwt') {
         jwtFromRequest: ExtractJwt.fromBodyField('refresh'),
         secretOrKey: 'worker-placeholder',
         ignoreExpiration: false,
+        passReqToCallback: true,
       });
       return;
     }
@@ -31,11 +33,18 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh-jwt') {
       jwtFromRequest: ExtractJwt.fromBodyField('refresh'),
       secretOrKey: secret,
       ignoreExpiration: false,
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: AuthJwtPayload) {
+  async validate(req: Request, payload: AuthJwtPayload) {
     const userId = payload.sub;
-    return this.authService.validateRefreshToken(userId);
+    const refreshToken = req.body?.refresh as string | undefined;
+
+    if (typeof refreshToken !== 'string' || refreshToken.length === 0) {
+      throw new UnauthorizedException('Refresh token is missing');
+    }
+
+    return this.authService.validateRefreshToken(userId, refreshToken);
   }
 }

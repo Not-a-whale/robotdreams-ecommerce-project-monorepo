@@ -35,3 +35,4 @@ jobs:
         run: |
           docker build --target prod -t ecommerce-api:pr-check-${{ github.sha }} .
           docker build --target worker -t ecommerce-worker:pr-check-${{ github.sha }} .
+          docker build --target payments-prod -t ecommerce-payments:pr-check-${{ github.sha }} .

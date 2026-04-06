@@ -27,12 +27,25 @@ echo "API image: ${API_IMAGE_REF}"
 echo "Worker image: ${WORKER_IMAGE_REF}"
 echo "Payments image: ${PAYMENTS_IMAGE_REF}"
 
-# Export .env variables so Docker Compose can interpolate ${VAR} in compose.yml
+API_IMAGE_REF_SAVED="${API_IMAGE_REF}"
+WORKER_IMAGE_REF_SAVED="${WORKER_IMAGE_REF}"
+PAYMENTS_IMAGE_REF_SAVED="${PAYMENTS_IMAGE_REF}"
+
 if [[ -f .env ]]; then
   set -a
+  # shellcheck disable=SC1091
   source .env
   set +a
   echo "Loaded $(wc -l < .env) env vars from root .env"
+fi
+
+export API_IMAGE_REF="${API_IMAGE_REF:-$API_IMAGE_REF_SAVED}"
+export WORKER_IMAGE_REF="${WORKER_IMAGE_REF:-$WORKER_IMAGE_REF_SAVED}"
+export PAYMENTS_IMAGE_REF="${PAYMENTS_IMAGE_REF:-$PAYMENTS_IMAGE_REF_SAVED}"
+
+if [[ -z "${PAYMENTS_IMAGE_REF}" ]]; then
+  echo "PAYMENTS_IMAGE_REF became empty after sourcing .env; set it in the deploy environment or remove PAYMENTS_IMAGE_REF= from .env"
+  exit 1
 fi
 
 echo "Pulling immutable images..."
