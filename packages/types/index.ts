@@ -1,0 +1,1 @@
+export type { ProductType } from './src/product';

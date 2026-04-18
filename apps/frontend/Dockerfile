@@ -1,61 +1,70 @@
-FROM node:20-alpine AS dev
+# Build from monorepo root (compose: context `.`, dockerfile `apps/frontend/Dockerfile`)
+# so workspace packages like `@ecommerce/types` resolve from `packages/types`.
+
+# Debian-based image: Tailwind v4 / lightningcss needs glibc (Alpine/musl breaks native bindings in Docker).
+FROM node:20-bookworm-slim AS dev
 
 WORKDIR /app
 
-COPY package.json ./
-COPY package-lock.json* ./
-COPY pnpm-lock.yaml* ./
-COPY yarn.lock* ./
+COPY package.json package-lock.json ./
+COPY apps ./apps
+COPY packages ./packages
 
-RUN if [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --frozen-lockfile; \
-    elif [ -f yarn.lock ]; then npm install -g yarn && yarn install --frozen-lockfile; \
-    else npm install; fi
+RUN npm ci
 
-COPY . .
+WORKDIR /app/apps/frontend
 
 EXPOSE 3001
 
 CMD ["npm", "run", "dev"]
 
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package.json ./
-COPY package-lock.json* ./
-COPY pnpm-lock.yaml* ./
-COPY yarn.lock* ./
+COPY package.json package-lock.json ./
+COPY apps ./apps
+COPY packages ./packages
 
-RUN if [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --frozen-lockfile; \
-    elif [ -f yarn.lock ]; then npm install -g yarn && yarn install --frozen-lockfile; \
-    else npm install; fi
+RUN npm ci
 
-COPY . .
+# npm workspaces often skip optional platform packages; install Linux native bindings for Tailwind 4 + lightningcss.
+RUN npm install lightningcss-linux-x64-gnu@1.31.1 @tailwindcss/oxide-linux-x64-gnu@4.2.1 --no-save
 
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN npm run build
+WORKDIR /app/apps/frontend
 
-FROM node:20-alpine AS prod
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npx next build --webpack
+
+FROM node:20-bookworm-slim AS prod
 
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+RUN groupadd --gid 1001 nodejs && \
+    useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nextjs
 
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Standalone output mirrors the monorepo path: server.js lives under apps/frontend/
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
+
+WORKDIR /app/apps/frontend
+
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/public ./public
+
+# Real file at /app/server.js so platforms that always run `node /app/server.js` work (symlinks/ENTRYPOINT are often ignored).
+COPY --chown=nextjs:nodejs apps/frontend/docker-server-bootstrap.cjs /app/server.js
+RUN test -f /app/apps/frontend/server.js
 
 USER nextjs
 
+WORKDIR /app
+
 EXPOSE 3001
 
-ENV PORT 3001
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3001
+ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["node", "/app/server.js"]

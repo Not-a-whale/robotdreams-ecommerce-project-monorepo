@@ -1,0 +1,11 @@
+{
+  "name": "@ecommerce/types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./product": "./src/product.ts"
+  },
+  "types": "./index.ts"
+}
