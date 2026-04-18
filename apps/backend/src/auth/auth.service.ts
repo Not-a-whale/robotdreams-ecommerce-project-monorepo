@@ -86,6 +86,7 @@ export class AuthService {
   async validateRefreshToken(userId: string, refreshToken: string) {
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('Invalid token');
+    if (!user.hashedRefreshToken) throw new UnauthorizedException('Invalid token');
 
     const isRefreshTokenValid = await verify(user.hashedRefreshToken, refreshToken);
     if (!isRefreshTokenValid) throw new UnauthorizedException('Invalid token');

@@ -37,7 +37,7 @@ export class FileRecordEntity {
   @JoinColumn({ name: 'owner_id' })
   owner: UserEntity;
 
-  @Column({ name: 'entity_type' })
+  @Column({ name: 'entity_type', type: 'enum', enum: FileEntityType, enumName: 'file_records_entity_type_enum' })
   entityType: FileEntityType;
 
   @Column({ name: 'entity_id', nullable: true })
@@ -55,6 +55,7 @@ export class FileRecordEntity {
   @Column({
     type: 'enum',
     enum: FileStatus,
+    enumName: 'file_records_status_enum',
     default: FileStatus.PENDING,
   })
   status: FileStatus;
@@ -62,6 +63,7 @@ export class FileRecordEntity {
   @Column({
     type: 'enum',
     enum: FileVisibility,
+    enumName: 'file_records_visibility_enum',
     default: FileVisibility.PUBLIC,
   })
   visibility: FileVisibility;

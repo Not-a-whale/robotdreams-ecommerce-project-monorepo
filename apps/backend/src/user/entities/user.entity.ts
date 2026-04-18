@@ -27,6 +27,10 @@ export class UserEntity {
   @Exclude()
   password: string;
 
+  @Column({ name: 'hashed_refresh_token', type: 'text', nullable: true })
+  @Exclude()
+  hashedRefreshToken: string | null;
+
   @Column({ name: 'avatar_url', nullable: true })
   avatarUrl: string;
 
