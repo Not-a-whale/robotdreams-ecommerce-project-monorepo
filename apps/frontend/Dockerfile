@@ -12,6 +12,9 @@ COPY packages ./packages
 
 RUN npm ci
 
+# Same as builder: workspaces often omit optional Linux native deps; Tailwind 4 needs them at runtime in dev.
+RUN npm install lightningcss-linux-x64-gnu@1.31.1 @tailwindcss/oxide-linux-x64-gnu@4.2.1 --no-save
+
 WORKDIR /app/apps/frontend
 
 EXPOSE 3001

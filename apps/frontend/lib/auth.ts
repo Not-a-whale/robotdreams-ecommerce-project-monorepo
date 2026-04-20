@@ -4,14 +4,9 @@ import { redirect } from 'next/navigation';
 import { FormState, LoginFormSchema, SignupFormSchema } from './type';
 import { createSession, getSession } from './session';
 import { cookies } from 'next/headers';
+import { SERVER_BACKEND_URL } from './constants';
 
-const backendUrl =
-  process.env.BACKEND_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  'http://api:3000';
-
-console.log('backendUrl', backendUrl);
+const backendUrl = SERVER_BACKEND_URL;
 
 export type HydratedUser = {
   id: string;

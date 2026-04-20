@@ -40,7 +40,7 @@ export class ProductEntity {
   @Column({ type: 'jsonb', nullable: true })
   images: Record<string, string>;
 
-  @Column({ name: 'category_slug', type: 'varchar', nullable: true })
+  @Column({ name: 'category_slug', type: 'varchar', length: 64 })
   categorySlug: string;
 
   @CreateDateColumn({ name: 'created_at' })

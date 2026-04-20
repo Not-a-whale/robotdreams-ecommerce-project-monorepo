@@ -6,11 +6,16 @@ import { ProductEntity } from './product.entity';
 export class ProductsService {
   constructor(private readonly dataSource: DataSource) {}
 
-  async findAll(): Promise<ProductEntity[]> {
-    return this.dataSource
+  async findAll(category?: string): Promise<ProductEntity[]> {
+    const qb = this.dataSource
       .getRepository(ProductEntity)
       .createQueryBuilder('product')
-      .orderBy('product.createdAt', 'DESC')
-      .getMany();
+      .orderBy('product.createdAt', 'DESC');
+
+    if (category && category !== 'all') {
+      qb.andWhere('product.categorySlug = :category', { category });
+    }
+
+    return qb.getMany();
   }
 }

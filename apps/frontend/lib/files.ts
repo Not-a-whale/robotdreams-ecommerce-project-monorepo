@@ -1,3 +1,5 @@
+import { SERVER_BACKEND_URL } from './constants';
+
 interface PresignedUploadResponse {
   fileId: string;
   key: string;
@@ -21,7 +23,7 @@ function getApiUrl() {
   if (typeof window !== 'undefined') {
     return '/api';
   }
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://api:3000';
+  return SERVER_BACKEND_URL;
 }
 
 export async function uploadAvatar({

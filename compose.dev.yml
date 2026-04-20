@@ -1,3 +1,7 @@
+# Requires merging with compose.yml (defines postgres, rabbitmq, networks, volumes).
+#   docker compose -f compose.yml -f compose.dev.yml up -d
+# Service name is "frontend" (not ecommerce-frontend).
+
 services:
   payments:
     build:
@@ -107,6 +111,8 @@ services:
       dockerfile: apps/frontend/Dockerfile
       target: dev
     container_name: ecommerce-frontend-dev
+    working_dir: /app/apps/frontend
+    command: npm run dev
     ports:
       - '3001:3001'
     environment:
@@ -114,12 +120,18 @@ services:
       BACKEND_URL: http://api:3000
       NEXT_PUBLIC_API_URL: http://localhost:3000
       WATCHPACK_POLLING: 'true'
+      WATCHPACK_POLLING_INTERVAL: '1000'
       CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '1000'
+      TSC_WATCHFILE: DynamicPriorityPolling
+      TSC_WATCHDIRECTORY: DynamicPriorityPolling
+      TSC_NONPOLLING_WATCHER: 'false'
     volumes:
-      - ./apps/frontend:/app/apps/frontend:cached
-      - ./packages/types:/app/packages/types:cached
+      - ./apps/frontend:/app/apps/frontend
+      - ./packages/types:/app/packages/types
       - /app/node_modules
-      - /app/apps/frontend/.next
+      # Step 1 (HMR): do not use a separate volume for .next — keep cache on the bind mount so
+      # Next’s incremental state matches the files you edit on the host.
     networks:
       - public
       - internal
@@ -132,3 +144,9 @@ services:
     ports:
       - '5672:5672'
       - '15672:15672'
+
+networks:
+  internal:
+    driver: bridge
+  public:
+    driver: bridge

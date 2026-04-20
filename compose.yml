@@ -124,20 +124,35 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  # next dev + bind mounts so edits on the host show up without rebuilding the image each time.
+  # (prod-style `next start` in Docker cannot hot reload.) Rebuild once after this change: --build
   frontend:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
-      target: prod
+      target: dev
     container_name: ecommerce-frontend
     restart: unless-stopped
+    working_dir: /app/apps/frontend
+    command: npm run dev
     ports:
       - '3001:3001'
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       BACKEND_URL: http://api:3000
       NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-3000}
       NEXT_PUBLIC_BACKEND_URL: http://localhost:${API_PORT:-3000}
+      WATCHPACK_POLLING: 'true'
+      WATCHPACK_POLLING_INTERVAL: '1000'
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '1000'
+      TSC_WATCHFILE: DynamicPriorityPolling
+      TSC_WATCHDIRECTORY: DynamicPriorityPolling
+      TSC_NONPOLLING_WATCHER: 'false'
+    volumes:
+      - ./apps/frontend:/app/apps/frontend
+      - ./packages/types:/app/packages/types
+      - /app/node_modules
     networks:
       - public
     depends_on:

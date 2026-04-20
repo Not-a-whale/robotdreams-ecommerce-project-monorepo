@@ -3,20 +3,37 @@
 import Image from "next/image";
 import type { ProductType } from "@ecommerce/types";
 import { ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import useCart from "@/store/cart-store";
+import { colorKeyToHex } from "@/lib/colorSwatch";
 
 const ProductCard = ({ product }: { product: ProductType }) => {
   const router = useRouter();
+  const colorKeys = product.colors ?? [];
+
   const [productTypes, setProductTypes] = useState<{
     size: string;
     color: string;
   }>({
     size: product.sizes?.[0] || "",
-    color: product.colors?.[0] || "",
+    color: colorKeys[0] || "",
   });
+
+  const [imageSrc, setImageSrc] = useState(() => {
+    const m = (product.images ?? {}) as Record<string, string>;
+    const keys = product.colors ?? [];
+    const fb = (keys[0] ? m[keys[0]] : "") || Object.values(m)[0] || "";
+    return m[productTypes.color] || fb;
+  });
+
+  useEffect(() => {
+    const m = (product.images ?? {}) as Record<string, string>;
+    const keys = product.colors ?? [];
+    const fb = (keys[0] ? m[keys[0]] : "") || Object.values(m)[0] || "";
+    setImageSrc(m[productTypes.color] || fb);
+  }, [productTypes.color, product.id, product.images, product.colors]);
 
   const { addToCart } = useCart();
 
@@ -43,12 +60,25 @@ const ProductCard = ({ product }: { product: ProductType }) => {
     <div className="shadow-lg rounded-lg overflow-hidden">
       {/* IMAGE */}
       <div className="relative aspect-[2/3] cursor-pointer" onClick={handleProductClick}>
-        <Image
-          src={(product.images as Record<string, string>)?.[productTypes.color] || ""}
-          alt={product.name}
-          fill
-          className="object-cover hover:scale-105 transition-transform duration-300"
-        />
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt={product.name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+            className="object-cover hover:scale-105 transition-transform duration-300"
+            onError={() => {
+              const m = (product.images ?? {}) as Record<string, string>;
+              const fb =
+                (colorKeys[0] ? m[colorKeys[0]] : "") ||
+                Object.values(m)[0] ||
+                "";
+              setImageSrc((prev) => (prev === fb ? prev : fb));
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gray-200" aria-hidden />
+        )}
       </div>
       {/* DETAILS */}
       <div className="flex flex-col gap-4 p-4">
@@ -83,8 +113,10 @@ const ProductCard = ({ product }: { product: ProductType }) => {
                   onClick={() => handleProductTypeChange("color", color)}
                 >
                   <div
-                    className="w-[14px] h-[14px] rounded-full"
-                    style={{ backgroundColor: color }}
+                    className={`w-[14px] h-[14px] rounded-full ${
+                      color === "white" ? "ring-1 ring-gray-300" : ""
+                    }`}
+                    style={{ backgroundColor: colorKeyToHex(color) }}
                   ></div>
                 </div>
               ))}
@@ -93,7 +125,9 @@ const ProductCard = ({ product }: { product: ProductType }) => {
         </div>
         {/* PRICE & ADD TO CART */}
         <div className="flex items-center justify-between">
-          <p className="font-medium">${product.price.toFixed(2)}</p>
+          <p className="font-medium">
+            ${(product.price / 100).toFixed(2)}
+          </p>
           <button onClick={handleAddToCart} className="ring-1 ring-gray-200 shadow-lg transition-all flex items-center gap-2 duration-300 rounded-md px-2 py-1 text-sm cursor-pointer hover:text-white hover:bg-black">
             <ShoppingCart className="w-4 h-4" />
             Add to Cart

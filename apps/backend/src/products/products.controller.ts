@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 
 @Controller('products')
@@ -6,8 +6,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  getAll() {
-    console.log('Getting all products');
-    return this.productsService.findAll();
+  getAll(@Query('category') category?: string) {
+    return this.productsService.findAll(category);
   }
 }

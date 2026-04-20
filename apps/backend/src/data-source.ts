@@ -4,6 +4,7 @@ import { UserEntity } from './user/entities/user.entity';
 import { OrderEntity } from './orders/entities/order.entity';
 import { OrderItemEntity } from './orders/order-item-entity';
 import { ProductEntity } from './products/product.entity';
+import { CategoryEntity } from './products/category.entity';
 import { ProcessedMessageEntity } from './orders/entities/processed-message.entity';
 import { FileRecordEntity } from './files/entities/file-record.entity';
 
@@ -24,6 +25,7 @@ export const dataSourceOptions: DataSourceOptions = {
     OrderItemEntity,
     FileRecordEntity,
     ProductEntity,
+    CategoryEntity,
     ProcessedMessageEntity,
   ],
   migrations: isTsRuntime ? ['src/migrations/*.ts'] : ['dist/migrations/*.js'],

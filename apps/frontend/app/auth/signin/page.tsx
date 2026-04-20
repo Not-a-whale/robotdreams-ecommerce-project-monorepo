@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import SignInForm from './signInForm';
-import { BACKEND_URL } from '@/lib/constants';
+import { PUBLIC_BACKEND_URL } from '@/lib/constants';
 
 const SignInPage = () => {
   return (
@@ -9,7 +9,7 @@ const SignInPage = () => {
       <SignInForm />
       <hr />
       <a
-        href={`${BACKEND_URL}/auth/google/login`}
+        href={`${PUBLIC_BACKEND_URL}/auth/google/login`}
         className="w-full"
       >
         <button className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition-colors">
