@@ -1,32 +1,48 @@
+// components/ProductList.tsx
 import Link from "next/link";
 import Categories from "./Categories";
-import ProductCard from "./ProductCard";
 import Filter from "./Filter";
+import ProductListClient from "./ProductListClient";
 import { SERVER_BACKEND_URL } from "@/lib/constants";
 import type { ProductType } from "@ecommerce/types";
+import Search from "./Search";
 
+// Тип ответа от бэка — соответствует тому, что мы сделали в NestJS
+interface PaginatedProducts {
+  items: ProductType[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
 
 const fetchProducts = async ({
   category,
   sort = "newest",
   search,
-  params
 }: {
   category: string;
   sort?: string;
   search?: string;
-  params: "homepage" | "products";
-}) => {
+}): Promise<PaginatedProducts> => {
   const url = new URL("/products", SERVER_BACKEND_URL);
+
   if (category && category !== "all") {
     url.searchParams.set("category", category);
   }
+  if (sort) {
+    url.searchParams.set("sort", sort);
+  }
+  // ВАЖНО: передаём search на бэк, бэк делает ILIKE.
+  // Это работает для любого размера каталога.
+  if (search) {
+    url.searchParams.set("search", search);
+  }
+
   const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) {
     throw new Error("Failed to fetch products");
   }
-  return (await res.json()) as ProductType[];
-}
+  return res.json() as Promise<PaginatedProducts>;
+};
 
 const ProductList = async ({
   category,
@@ -39,24 +55,25 @@ const ProductList = async ({
   search?: string;
   params: "homepage" | "products";
 }) => {
-  const products = await fetchProducts({ category, sort, search, params });
+  // Грузим первую страницу на сервере (для SEO и быстрого первого paint).
+  const initialData = await fetchProducts({ category, sort, search });
+
   return (
     <div className="w-full">
       <Categories />
-      {params === "homepage" && (
-        <Filter />
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-12">
-        {products?.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-      <Link
-        href={`${category ? `/products/${category}` : "/products"}`}
-        className="flex justify-end"
-      >
-        View All Products
-      </Link>
+      {params === "homepage" && <Filter />}
+      {params === "products" && <Search />}
+
+      {/* key гарантирует пересоздание клиентского компонента
+          при смене любого из фильтров — иначе старые items
+          смешаются с новыми */}
+      <ProductListClient
+        key={`${category}-${sort ?? ""}-${search ?? ""}`}
+        initialData={initialData}
+        category={category}
+        sort={sort}
+        search={search}
+      />
     </div>
   );
 };

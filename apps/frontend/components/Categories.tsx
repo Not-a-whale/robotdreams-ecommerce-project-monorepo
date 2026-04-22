@@ -9,7 +9,7 @@ import {
   Venus,
   Hand,
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const categories = [
   {
@@ -57,24 +57,33 @@ const categories = [
 const Categories = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
 
   const selectedCategory = searchParams.get("category") || "all";
 
-  const handleChange = (category: string | null) => {
+  const handleChange = (category: string) => {
     const params = new URLSearchParams(searchParams.toString());
+
     if (category && category !== "all") {
       params.set("category", category);
     } else {
       params.delete("category");
     }
-    router.push(`/?${params.toString()}`, { scroll: false });
+
+    params.delete("cursor");
+
+    const queryString = params.toString();
+    router.push(
+      queryString ? `${pathname}?${queryString}` : pathname,
+      { scroll: false }
+    );
   };
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 bg-gray-100 p-2 rounded-lg mb-4 text-sm">
       {categories.map((category) => (
         <div
-          key={category.name}
+          key={category.slug}
           className={`flex items-center justify-center gap-2 cursor-pointer px-2 py-1 rounded-md ${
             selectedCategory === category.slug ? "bg-white" : "text-gray-500"
           }`}
