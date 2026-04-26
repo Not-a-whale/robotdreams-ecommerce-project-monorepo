@@ -99,6 +99,10 @@ export class AuthService {
     };
   }
 
+  async logout(userId: string): Promise<void> {
+    await this.userService.updateHashedRefreshToken(userId, null);
+  }
+
   async refreshToken(userId: string) {
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('Invalid token');

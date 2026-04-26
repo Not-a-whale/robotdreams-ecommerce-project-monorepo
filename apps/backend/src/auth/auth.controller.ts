@@ -13,6 +13,7 @@ import { CreateUserDto } from '../user/dto/create-user.dto';
 import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth/jwt-auth.guard';
 import type { AuthUser } from './types/auth-user.type';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { RefreshAuthGuard } from './guards/refresh-auth/refresh-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth/google-auth.guard';
 import type { Response } from 'express';
@@ -81,5 +82,11 @@ export class AuthController {
   @Post('refresh')
   async refreshToken(@Request() req: AuthRequest) {
     return this.authService.refreshToken(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@CurrentUser() user: AuthUser): Promise<void> {
+    await this.authService.logout(user.id);
   }
 }

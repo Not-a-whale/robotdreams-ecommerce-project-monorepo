@@ -95,7 +95,7 @@ export class UserService {
     });
   }
 
-  async updateHashedRefreshToken(id: string, hashedRT: string): Promise<void> {
+  async updateHashedRefreshToken(id: string, hashedRT: string | null): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {

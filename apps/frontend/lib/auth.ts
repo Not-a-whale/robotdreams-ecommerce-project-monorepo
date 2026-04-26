@@ -276,6 +276,17 @@ export async function signIn(
 }
 
 export async function signOut() {
+  const session = await getSession();
+  if (session?.accessToken) {
+    try {
+      await fetch(`${backendUrl}/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      });
+    } catch {
+      // backend unreachable — still clear the local session
+    }
+  }
   (await cookies()).delete('session');
   redirect('/auth/signin');
 }
