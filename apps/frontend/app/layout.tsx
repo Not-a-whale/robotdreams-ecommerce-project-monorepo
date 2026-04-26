@@ -4,6 +4,7 @@ import './globals.css';
 import AppBar from '@/components/ui/appBar';
 import UserStoreHydrator from '@/components/UserStoreHydrator';
 import { getHydratedProtectedUser } from '@/lib/auth';
+import Footer from '@/components/Footer';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,6 +36,7 @@ export default async function RootLayout({
         <UserStoreHydrator user={user} token={token} />
         <AppBar />
         {children}
+        <Footer />
       </body>
     </html>
   );

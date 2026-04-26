@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { NestFactory } from '@nestjs/core';
-import { Transport } from '@nestjs/microservices';
+import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 
 function resolveProtoPath(): string {
@@ -21,19 +21,26 @@ function resolveProtoPath(): string {
 
 async function bootstrap() {
   const protoPath = resolveProtoPath();
-  const url = process.env.PAYMENTS_GRPC_BIND ?? '0.0.0.0:50051';
+  const grpcUrl = process.env.PAYMENTS_GRPC_BIND ?? '0.0.0.0:50051';
+  const httpPort = Number(process.env.PAYMENTS_HTTP_PORT ?? 3003);
 
-  const app = await NestFactory.createMicroservice(AppModule, {
+  const app = await NestFactory.create(AppModule);
+
+  app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       package: 'payments',
       protoPath,
-      url,
+      url: grpcUrl,
     },
   });
 
-  await app.listen();
-  console.log(`Payments gRPC listening on ${url}`);
+  app.enableCors();
+  await app.startAllMicroservices();
+  await app.listen(httpPort);
+
+  console.log(`Payments HTTP listening on port ${httpPort}`);
+  console.log(`Payments gRPC listening on ${grpcUrl}`);
   console.log(`Proto: ${protoPath}`);
 }
 

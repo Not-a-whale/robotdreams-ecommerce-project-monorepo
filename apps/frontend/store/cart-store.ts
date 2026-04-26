@@ -1,6 +1,6 @@
-import type { ProductType } from '@ecommerce/types';
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import type { ProductType } from "@ecommerce/types";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type CartLineItem = ProductType & {
   selectedSize: string;
@@ -8,66 +8,65 @@ export type CartLineItem = ProductType & {
   quantity: number;
 };
 
-function lineKey(item: Pick<CartLineItem, 'id' | 'selectedSize' | 'selectedColor'>) {
-  return `${item.id}:${item.selectedSize}:${item.selectedColor}`;
-}
+type CartStoreStateType = {
+  cart: CartLineItem[];
+  hasHydrated: boolean;
+};
 
-type CartStoreState = {
-  items: CartLineItem[];
+type CartStoreActionsType = {
   addToCart: (item: CartLineItem) => void;
-  removeLine: (item: Pick<CartLineItem, 'id' | 'selectedSize' | 'selectedColor'>) => void;
-  setQuantity: (
-    item: Pick<CartLineItem, 'id' | 'selectedSize' | 'selectedColor'>,
-    quantity: number,
+  removeFromCart: (
+    product: Pick<CartLineItem, "id" | "selectedSize" | "selectedColor">,
   ) => void;
   clearCart: () => void;
 };
 
-export const useCartStore = create<CartStoreState>()(
+const useCart = create<CartStoreStateType & CartStoreActionsType>()(
   persist(
     (set) => ({
-      items: [],
-
-      addToCart: (item) =>
+      cart: [],
+      hasHydrated: false,
+      addToCart: (item) => {
         set((state) => {
-          const key = lineKey(item);
-          const idx = state.items.findIndex((i) => lineKey(i) === key);
-          if (idx >= 0) {
-            const next = [...state.items];
-            next[idx] = {
-              ...next[idx],
-              quantity: next[idx].quantity + item.quantity,
-            };
-            return { items: next };
+          const existingItemIndex = state.cart.findIndex(
+            (p) =>
+              p.id === item.id &&
+              p.selectedSize === item.selectedSize &&
+              p.selectedColor === item.selectedColor,
+          );
+          if (existingItemIndex !== -1) {
+            const updatedCart = [...state.cart];
+            updatedCart![existingItemIndex]!.quantity += item.quantity;
+            return { cart: updatedCart };
+          } else {
+            return { cart: [...state.cart, item] };
           }
-          return { items: [...state.items, item] };
-        }),
-
-      removeLine: (item) =>
+        });
+      },
+      removeFromCart: (product) =>
         set((state) => ({
-          items: state.items.filter((i) => lineKey(i) !== lineKey(item)),
+          cart: state.cart.filter(
+            (p) =>
+              !(
+                p.id === product.id &&
+                p.selectedSize === product.selectedSize &&
+                p.selectedColor === product.selectedColor
+              ),
+          ),
         })),
-
-      setQuantity: (item, quantity) =>
-        set((state) => {
-          if (quantity <= 0) {
-            return {
-              items: state.items.filter((i) => lineKey(i) !== lineKey(item)),
-            };
-          }
-          return {
-            items: state.items.map((i) =>
-              lineKey(i) === lineKey(item) ? { ...i, quantity } : i,
-            ),
-          };
-        }),
-
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ cart: [] }),
     }),
-    { name: 'cart-storage' },
+    {
+      name: "cart",
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.hasHydrated = true;
+        }
+      },
+    },
   ),
 );
 
-export default function useCart() {
-  return useCartStore();
-}
+export const useCartStore = useCart;
+export default useCart;

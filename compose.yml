@@ -48,7 +48,10 @@ services:
     container_name: ecommerce-payments
     restart: unless-stopped
     ports:
+      - '${PAYMENTS_HTTP_PORT:-3003}:3003'
       - '${PAYMENTS_GRPC_PORT:-50051}:50051'
+    env_file:
+      - ./apps/payments-service/.env
     environment:
       NODE_ENV: production
       PAYMENTS_GRPC_BIND: 0.0.0.0:50051
@@ -142,6 +145,9 @@ services:
       BACKEND_URL: http://api:3000
       NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-3000}
       NEXT_PUBLIC_BACKEND_URL: http://localhost:${API_PORT:-3000}
+      NEXT_PUBLIC_PAYMENT_SERVICE_URL: http://localhost:3003
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+      PAYMENTS_INTERNAL_URL: http://payments:3003
       WATCHPACK_POLLING: 'true'
       WATCHPACK_POLLING_INTERVAL: '1000'
       CHOKIDAR_USEPOLLING: 'true'
@@ -155,6 +161,7 @@ services:
       - /app/node_modules
     networks:
       - public
+      - internal
     depends_on:
       - api
 

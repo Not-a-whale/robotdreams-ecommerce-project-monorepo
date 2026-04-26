@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { ProductEntity } from './product.entity';
 import { decodeCursor, encodeCursor } from './utils/cursor.util';
@@ -22,6 +22,16 @@ const SORT_CONFIG: Record<SortOption, { field: 'createdAt' | 'price'; direction:
 @Injectable()
 export class ProductsService {
   constructor(private readonly dataSource: DataSource) {}
+
+  async findOne(id: string): Promise<ProductEntity> {
+    const product = await this.dataSource
+      .getRepository(ProductEntity)
+      .findOne({ where: { id } });
+    if (!product) {
+      throw new NotFoundException(`Product not found: ${id}`);
+    }
+    return product;
+  }
 
   async findAll(query: GetProductsDto): Promise<PaginatedProducts> {
     const { category, search, sort = 'newest', cursor, limit = 20 } = query;

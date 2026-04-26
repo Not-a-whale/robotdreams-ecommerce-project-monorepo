@@ -39,15 +39,13 @@ const Search = () => {
   }, [value, pathname, router, searchParams]);
 
   return (
-    <div className="flex items-center justify-end my-6">
-      <input
-        type="text"
-        placeholder="Search products..."
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="ring-1 ring-gray-200 shadow-md p-2 rounded-sm w-full max-w-sm"
-      />
-    </div>
+    <input
+      type="text"
+      placeholder="Search products..."
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      className="bg-white/20 placeholder-white/70 text-white px-3 py-1.5 rounded-md w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+    />
   );
 };
 

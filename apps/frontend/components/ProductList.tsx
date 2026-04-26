@@ -1,11 +1,9 @@
 // components/ProductList.tsx
-import Link from "next/link";
 import Categories from "./Categories";
 import Filter from "./Filter";
 import ProductListClient from "./ProductListClient";
 import { SERVER_BACKEND_URL } from "@/lib/constants";
 import type { ProductType } from "@ecommerce/types";
-import Search from "./Search";
 
 // Тип ответа от бэка — соответствует тому, что мы сделали в NestJS
 interface PaginatedProducts {
@@ -62,7 +60,6 @@ const ProductList = async ({
     <div className="w-full">
       <Categories />
       {params === "homepage" && <Filter />}
-      {params === "products" && <Search />}
 
       {/* key гарантирует пересоздание клиентского компонента
           при смене любого из фильтров — иначе старые items
