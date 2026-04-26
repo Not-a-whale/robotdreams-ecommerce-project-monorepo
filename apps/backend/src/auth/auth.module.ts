@@ -12,6 +12,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshStrategy } from './strategies/refresh-token.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { AuditModule } from 'src/audit/audit.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     ConfigModule.forFeature(refreshConfig),
     ConfigModule.forFeature(googleOAuthConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
+    AuditModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, GoogleStrategy, RefreshStrategy],

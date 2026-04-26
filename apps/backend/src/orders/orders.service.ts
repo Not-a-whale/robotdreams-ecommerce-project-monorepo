@@ -16,6 +16,7 @@ import { OrdersPaginationInput } from './graphql/orders-pagination.input';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
 import { PaymentsGrpcClientService } from 'src/payments/payments-grpc.client';
 import { paymentStatusToLabel } from 'src/payments/payment-status.util';
+import { AuditLoggerService } from 'src/audit/audit-logger.service';
 
 type PgError = {
   code?: string;
@@ -48,6 +49,7 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly rabbitMQService: RabbitMQService,
     private readonly paymentsGrpc: PaymentsGrpcClientService,
+    private readonly auditLogger: AuditLoggerService,
   ) {}
 
   async findAll(
@@ -164,6 +166,15 @@ export class OrdersService {
       });
 
       await queryRunner.commitTransaction();
+
+      this.auditLogger.log({
+        action: 'order.created',
+        actorId: dto.userId,
+        targetType: 'order',
+        targetId: order.id,
+        outcome: 'success',
+        meta: { itemCount: dto.items.length },
+      });
 
       this.logger.log(`Order created: ${order.id}, messageId: ${messageId}`);
 

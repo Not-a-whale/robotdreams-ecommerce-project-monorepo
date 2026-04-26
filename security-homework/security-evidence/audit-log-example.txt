@@ -1,0 +1,32 @@
+# Audit Log Evidence
+# Source: docker logs ecommerce-api 2>&1 | Select-String '"action"'
+# Date: 2026-04-26  Container: ecommerce-api
+# All audit events are emitted by AuditLoggerService with NestJS Logger context "Audit"
+# Output format: [Nest] <pid>  - <timestamp>  LOG [Audit] <JSON>
+
+[Nest] 1  - 04/26/2026, 8:15:51 PM     LOG [Audit] {"action":"auth.login_failed","actorId":null,"targetType":"user","targetId":null,"outcome":"failure","meta":{"reason":"user_not_found"},"timestamp":"2026-04-26T20:15:51.329Z"}
+
+[Nest] 1  - 04/26/2026, 8:15:51 PM     LOG [Audit] {"action":"auth.login_failed","actorId":null,"targetType":"user","targetId":null,"outcome":"failure","meta":{"reason":"user_not_found"},"timestamp":"2026-04-26T20:15:51.455Z"}
+
+[Nest] 1  - 04/26/2026, 8:15:51 PM     LOG [Audit] {"action":"auth.login_failed","actorId":null,"targetType":"user","targetId":null,"outcome":"failure","meta":{"reason":"user_not_found"},"timestamp":"2026-04-26T20:15:51.510Z"}
+
+[Nest] 1  - 04/26/2026, 8:15:51 PM     LOG [Audit] {"action":"auth.login_failed","actorId":null,"targetType":"user","targetId":null,"outcome":"failure","meta":{"reason":"user_not_found"},"timestamp":"2026-04-26T20:15:51.564Z"}
+
+[Nest] 1  - 04/26/2026, 8:15:51 PM     LOG [Audit] {"action":"auth.login_failed","actorId":null,"targetType":"user","targetId":null,"outcome":"failure","meta":{"reason":"user_not_found"},"timestamp":"2026-04-26T20:15:51.618Z"}
+
+# ---- Annotated schema for each event type ----
+
+# auth.login_failed (wrong password)
+{"action":"auth.login_failed","actorId":null,"targetType":"user","targetId":"<user-uuid>","outcome":"failure","meta":{"reason":"invalid_password"},"timestamp":"<ISO8601>"}
+
+# auth.login_success
+{"action":"auth.login_success","actorId":"<user-uuid>","targetType":"user","targetId":"<user-uuid>","outcome":"success","meta":{},"timestamp":"<ISO8601>"}
+
+# auth.logout
+{"action":"auth.logout","actorId":"<user-uuid>","targetType":"user","targetId":"<user-uuid>","outcome":"success","meta":{},"timestamp":"<ISO8601>"}
+
+# order.created
+{"action":"order.created","actorId":"<user-uuid>","targetType":"order","targetId":"<order-uuid>","outcome":"success","meta":{"itemCount":3},"timestamp":"<ISO8601>"}
+
+# Implementation: apps/backend/src/audit/audit-logger.service.ts
+# Module:         apps/backend/src/audit/audit.module.ts

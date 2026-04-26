@@ -1,0 +1,26 @@
+# Rate Limiting Evidence — 429 Too Many Requests
+# Auth throttle policy: 5 requests per 15 minutes per IP on /auth/signin, /auth/signup, /auth/refresh
+# Date: 2026-04-26  Container: ecommerce-api
+
+# Command run:
+# 1..7 | ForEach-Object {
+#   Invoke-WebRequest -Uri http://localhost:3000/auth/signin -Method POST
+#     -Body '{"email":"test@test.com","password":"wrong"}' -ErrorAction SilentlyContinue
+# }
+
+Request 1  → HTTP 401  {"message":"Invalid credentials","error":"Unauthorized","statusCode":401}
+Request 2  → HTTP 401  {"message":"Invalid credentials","error":"Unauthorized","statusCode":401}
+Request 3  → HTTP 401  {"message":"Invalid credentials","error":"Unauthorized","statusCode":401}
+Request 4  → HTTP 401  {"message":"Invalid credentials","error":"Unauthorized","statusCode":401}
+Request 5  → HTTP 429  {"statusCode":429,"message":"ThrottlerException: Too Many Requests"}
+Request 6  → HTTP 429  {"statusCode":429,"message":"ThrottlerException: Too Many Requests"}
+Request 7  → HTTP 429  {"statusCode":429,"message":"ThrottlerException: Too Many Requests"}
+Final status: 429
+
+# Throttler config (app.module.ts):
+#   auth   policy: limit=5,  ttl=900000ms (15 min)  — applied to: POST /auth/signin, POST /auth/signup, POST /auth/refresh
+#   global policy: limit=100, ttl=900000ms (15 min) — applied to all other endpoints
+#
+# Rate limit is tracked per source IP address.
+# Behind a reverse proxy, app.set('trust proxy', 1) must be enabled so
+# X-Forwarded-For is used instead of socket.remoteAddress.

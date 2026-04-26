@@ -1,0 +1,28 @@
+# Security Headers Evidence
+# Command: Invoke-WebRequest -Uri http://localhost:3000/health -UseBasicParsing | Select-Object -ExpandProperty Headers
+# Date: 2026-04-26  Container: ecommerce-api (NODE_ENV=production)
+
+Content-Security-Policy     : default-src 'none';script-src 'none';object-src 'none';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Opener-Policy  : same-origin
+Cross-Origin-Resource-Policy: cross-origin
+Origin-Agent-Cluster        : ?1
+Referrer-Policy             : no-referrer
+Strict-Transport-Security   : max-age=31536000; includeSubDomains; preload
+X-Content-Type-Options      : nosniff
+X-DNS-Prefetch-Control      : off
+X-Download-Options          : noopen
+X-Frame-Options             : DENY
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection            : 0
+X-RateLimit-Limit-global    : 100
+X-RateLimit-Remaining-global: 99
+X-RateLimit-Reset-global    : 900
+X-RateLimit-Limit-auth      : 5
+X-RateLimit-Remaining-auth  : 4
+X-RateLimit-Reset-auth      : 900
+Content-Type                : application/json; charset=utf-8
+Date                        : Sun, 26 Apr 2026 20:15:41 GMT
+
+# NOTABLE ABSENCES (evidence of hardening):
+# X-Powered-By header is NOT present — suppressed by helmet hidePoweredBy
+# Server header is NOT present

@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import refreshConfig from './config/refresh.config';
 import type { ConfigType } from '@nestjs/config';
 import type { AuthUser } from './types/auth-user.type';
+import { AuditLoggerService } from 'src/audit/audit-logger.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(refreshConfig.KEY)
     private readonly refreshTokenConfig: ConfigType<typeof refreshConfig>,
+    private readonly auditLogger: AuditLoggerService,
   ) {}
 
   private normalizeAvatarFileId(value: unknown): string | null {
@@ -31,11 +33,31 @@ export class AuthService {
 
   async validateLocalUser(email: string, password: string) {
     const user = await this.userService.findByEmailWithPassword(email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      this.auditLogger.log({
+        action: 'auth.login_failed',
+        actorId: null,
+        targetType: 'user',
+        targetId: null,
+        outcome: 'failure',
+        meta: { reason: 'user_not_found' },
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     const isPasswordValid = await verify(user.password, password);
 
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+    if (!isPasswordValid) {
+      this.auditLogger.log({
+        action: 'auth.login_failed',
+        actorId: user.id,
+        targetType: 'user',
+        targetId: user.id,
+        outcome: 'failure',
+        meta: { reason: 'invalid_password' },
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     return {
       id: user.id,
@@ -49,6 +71,13 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateToken(user.id, user.name);
     const hashedRT = await hash(refreshToken);
     await this.userService.updateHashedRefreshToken(user.id, hashedRT);
+    this.auditLogger.log({
+      action: 'auth.login_success',
+      actorId: user.id,
+      targetType: 'user',
+      targetId: user.id,
+      outcome: 'success',
+    });
     return {
       id: user.id,
       name: user.name,
@@ -101,6 +130,13 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.userService.updateHashedRefreshToken(userId, null);
+    this.auditLogger.log({
+      action: 'auth.logout',
+      actorId: userId,
+      targetType: 'user',
+      targetId: userId,
+      outcome: 'success',
+    });
   }
 
   async refreshToken(userId: string) {

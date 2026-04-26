@@ -8,6 +8,7 @@ import {
   JoinColumn,
   OneToOne,
 } from 'typeorm';
+import { UserRole } from '../enums/user-role.enum';
 
 @Entity('users')
 export class UserEntity {
@@ -36,6 +37,9 @@ export class UserEntity {
 
   @Column({ name: 'avatar_file_id', nullable: true })
   avatarFileId: string;
+
+  @Column({ type: 'varchar', default: UserRole.USER })
+  role: UserRole;
 
   @OneToOne(() => FileRecordEntity, { nullable: true })
   @JoinColumn({ name: 'avatar_file_id' })

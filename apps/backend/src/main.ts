@@ -2,8 +2,11 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import { validateEnv } from './env.validation';
 
 async function bootstrap() {
+  validateEnv();
+
   if (process.env.WORKER_MODE === 'true') {
     console.log('⚠️  WORKER_MODE detected, use worker.ts instead');
     process.exit(0);

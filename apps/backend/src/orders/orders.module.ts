@@ -11,6 +11,7 @@ import { OrderItemResolver } from './order-item.resolver';
 import { ProductsModule } from 'src/products/products.module';
 import { RabbitMQModule } from 'src/rabbitmq/rabbitmq.module';
 import { PaymentsClientModule } from 'src/payments/payments-client.module';
+import { AuditModule } from 'src/audit/audit.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PaymentsClientModule } from 'src/payments/payments-client.module';
     ProductsModule,
     RabbitMQModule,
     PaymentsClientModule,
+    AuditModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersResolver, OrderItemResolver],
