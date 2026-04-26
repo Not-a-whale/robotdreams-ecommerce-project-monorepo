@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -16,9 +17,22 @@ import { ConfigModule } from '@nestjs/config';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { WorkerModule } from './worker/worker.module';
 import { FilesModule } from './files/files.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: 'global',
+        ttl: 15 * 60 * 1000,
+        limit: 100,
+      },
+      {
+        name: 'auth',
+        ttl: 15 * 60 * 1000,
+        limit: 5,
+      },
+    ]),
     TypeOrmModule.forRoot({
       ...dataSourceOptions,
       autoLoadEntities: true,
@@ -40,6 +54,6 @@ import { FilesModule } from './files/files.module';
     FilesModule,
   ],
   controllers: [AppController, HealthController],
-  providers: [AppService, AppResolver],
+  providers: [AppService, AppResolver, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

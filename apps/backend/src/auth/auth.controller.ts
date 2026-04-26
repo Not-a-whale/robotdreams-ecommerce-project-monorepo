@@ -17,6 +17,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { RefreshAuthGuard } from './guards/refresh-auth/refresh-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth/google-auth.guard';
 import type { Response } from 'express';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 
 type AuthRequest = {
   user: AuthUser;
@@ -26,11 +27,13 @@ type AuthRequest = {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ auth: {} })
   @Post('signup')
   async registerUser(@Body() createUserDto: CreateUserDto) {
     return this.authService.registerUser(createUserDto);
   }
 
+  @Throttle({ auth: {} })
   @UseGuards(LocalAuthGuard)
   @Post('signin')
   async login(@Request() req: AuthRequest) {
@@ -38,6 +41,7 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
+  @SkipThrottle()
   @Get('protected')
   @UseGuards(JwtAuthGuard)
   async getProtectedResource(@Request() req: AuthRequest): Promise<AuthUser> {
@@ -56,10 +60,12 @@ export class AuthController {
     return this.authService.validateJwtUser(authUser.id);
   }
 
+  @SkipThrottle()
   @UseGuards(GoogleAuthGuard)
   @Get('google/login')
   googleLogin() {}
 
+  @SkipThrottle()
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
   async googleCallback(@Request() req: AuthRequest, @Res() res: Response) {
@@ -78,6 +84,7 @@ export class AuthController {
     return res.redirect(redirectUrl);
   }
 
+  @Throttle({ auth: {} })
   @UseGuards(RefreshAuthGuard)
   @Post('refresh')
   async refreshToken(@Request() req: AuthRequest) {

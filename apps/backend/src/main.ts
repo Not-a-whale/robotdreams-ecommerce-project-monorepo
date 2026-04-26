@@ -1,6 +1,7 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 
 async function bootstrap() {
   if (process.env.WORKER_MODE === 'true') {
@@ -11,6 +12,35 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug'],
   });
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          scriptSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          ...(process.env.NODE_ENV !== 'production' && {
+            scriptSrc: ["'self'", 'cdn.jsdelivr.net', "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'cdn.jsdelivr.net'],
+            connectSrc: ["'self'"],
+          }),
+        },
+      },
+      noSniff: true,
+      frameguard: { action: 'deny' },
+      hsts:
+        process.env.NODE_ENV === 'production'
+          ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+          : false,
+      hidePoweredBy: true,
+      ieNoOpen: true,
+      dnsPrefetchControl: { allow: false },
+      referrerPolicy: { policy: 'no-referrer' },
+      crossOriginOpenerPolicy: { policy: 'same-origin' },
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   app.enableCors({
     origin: [
