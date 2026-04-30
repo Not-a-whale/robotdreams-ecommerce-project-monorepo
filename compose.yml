@@ -85,6 +85,15 @@ services:
       PAYMENTS_GRPC_URL: payments:50051
       PAYMENTS_GRPC_TIMEOUT_MS: ${PAYMENTS_GRPC_TIMEOUT_MS:-5000}
       ORDER_PAYMENT_CURRENCY: ${ORDER_PAYMENT_CURRENCY:-UAH}
+      NODE_OPTIONS: '--max-old-space-size=768'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
     networks:
       - internal
       - public
@@ -117,6 +126,14 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin}@rabbitmq:5672
       WORKER_MODE: 'true'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
     networks:
       - internal
     depends_on:

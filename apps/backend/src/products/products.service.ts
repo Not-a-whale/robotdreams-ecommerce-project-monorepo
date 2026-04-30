@@ -42,6 +42,20 @@ export class ProductsService {
     const qb = this.dataSource
       .getRepository(ProductEntity)
       .createQueryBuilder('product')
+      .select([
+        'product.id',
+        'product.externalId',
+        'product.name',
+        'product.shortDescription',
+        'product.price',
+        'product.stock',
+        'product.sizes',
+        'product.colors',
+        'product.images',
+        'product.categorySlug',
+        'product.createdAt',
+        'product.updatedAt',
+      ])
       .orderBy(`product.${field}`, direction)
       .addOrderBy('product.id', direction)
       .take(limit + 1);

@@ -32,6 +32,11 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
         ttl: 15 * 60 * 1000,
         limit: 5,
       },
+      {
+        name: 'products',
+        ttl: 60 * 1000,
+        limit: 300,
+      },
     ]),
     TypeOrmModule.forRoot({
       ...dataSourceOptions,
